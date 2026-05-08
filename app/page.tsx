@@ -158,6 +158,8 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminTab, setAdminTab] = useState('matchs');
   const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [showBanMenu, setShowBanMenu] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -222,6 +224,38 @@ export default function Home() {
   async function toggleAdmin(userId: string, currentVal: boolean) {
     await supabase.from('profiles').update({ is_admin: !currentVal }).eq('id', userId);
     fetchAllUsers();
+  }
+
+  async function banPlayer(userId: string, duration: string) {
+    let bannedUntil = null;
+    if (duration === '1h') bannedUntil = new Date(Date.now() + 3600000).toISOString();
+    else if (duration === '24h') bannedUntil = new Date(Date.now() + 86400000).toISOString();
+    else if (duration === '48h') bannedUntil = new Date(Date.now() + 172800000).toISOString();
+    else if (duration === '7j') bannedUntil = new Date(Date.now() + 604800000).toISOString();
+    else if (duration === 'permanent') bannedUntil = '2099-01-01T00:00:00.000Z';
+    await supabase.from('profiles').update({ is_banned: true, banned_until: bannedUntil }).eq('id', userId);
+    setShowBanMenu(false);
+    setSelectedPlayer(null);
+    fetchAllUsers();
+  }
+
+  async function unbanPlayer(userId: string) {
+    await supabase.from('profiles').update({ is_banned: false, banned_until: null }).eq('id', userId);
+    fetchAllUsers();
+  }
+
+  function getBanStatus(user: any) {
+    if (!user.is_banned) return null;
+    if (user.banned_until === '2099-01-01T00:00:00.000Z') return 'Permanent';
+    if (user.banned_until) {
+      const remaining = new Date(user.banned_until).getTime() - Date.now();
+      if (remaining <= 0) return null;
+      const hours = Math.floor(remaining / 3600000);
+      const days = Math.floor(hours / 24);
+      if (days > 0) return `${days}j restants`;
+      return `${hours}h restantes`;
+    }
+    return 'Banni';
   }
 
   async function fetchData() {
@@ -714,24 +748,91 @@ export default function Home() {
             )}
 
             {adminTab === 'joueurs' && (
-              <div style={panel}>
-                <div style={{ ...panelTitle, color: '#ef4444' }}>Gestion des joueurs</div>
-                {allUsers.map((u, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: gold, overflow: 'hidden', flexShrink: 0 }}>
-                      {u.avatar_url ? <img src={u.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
+              <>
+                {/* Modal ban */}
+                {showBanMenu && selectedPlayer && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#0f0f0f', border: '1px solid #ef4444', borderRadius: '16px', padding: '28px', width: '360px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#ef4444' }}>Bannir {selectedPlayer.username}</div>
+                        <button onClick={() => { setShowBanMenu(false); setSelectedPlayer(null); }} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                        {[
+                          { label: '1 heure', value: '1h' },
+                          { label: '24 heures', value: '24h' },
+                          { label: '48 heures', value: '48h' },
+                          { label: '7 jours', value: '7j' },
+                          { label: 'Permanent', value: 'permanent' },
+                        ].map(opt => (
+                          <button key={opt.value} onClick={() => banPlayer(selectedPlayer.id, opt.value)} style={{ background: opt.value === 'permanent' ? 'rgba(239,68,68,0.15)' : '#111', border: `1px solid ${opt.value === 'permanent' ? '#ef4444' : border}`, color: opt.value === 'permanent' ? '#ef4444' : light, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const }}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{u.username}</div>
-                      {u.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>Discord: {u.discord_username}</div>}
-                    </div>
-                    {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
-                    <button onClick={() => toggleAdmin(u.id, u.is_admin)} style={{ background: u.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${u.is_admin ? 'rgba(239,68,68,0.3)' : goldBorder}`, color: u.is_admin ? '#ef4444' : gold, padding: '5px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                      {u.is_admin ? 'Retirer admin' : 'Rendre admin'}
-                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+
+                {/* Modal actions joueur */}
+                {selectedPlayer && !showBanMenu && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#0f0f0f', border: `1px solid ${border}`, borderRadius: '16px', padding: '28px', width: '360px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                            {selectedPlayer.avatar_url ? <img src={selectedPlayer.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : selectedPlayer.username?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '15px', fontWeight: 800, color: light }}>{selectedPlayer.username}</div>
+                            {selectedPlayer.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{selectedPlayer.discord_username}</div>}
+                          </div>
+                        </div>
+                        <button onClick={() => setSelectedPlayer(null)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                        <button onClick={() => toggleAdmin(selectedPlayer.id, selectedPlayer.is_admin)} style={{ background: selectedPlayer.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${selectedPlayer.is_admin ? 'rgba(239,68,68,0.3)' : goldBorder}`, color: selectedPlayer.is_admin ? '#ef4444' : gold, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                          {selectedPlayer.is_admin ? 'Retirer les droits admin' : 'Nommer admin'}
+                        </button>
+                        {selectedPlayer.is_banned ? (
+                          <button onClick={() => { unbanPlayer(selectedPlayer.id); setSelectedPlayer(null); }} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                            Lever le ban
+                          </button>
+                        ) : (
+                          <button onClick={() => setShowBanMenu(true)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                            Bannir ce joueur
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Gestion des joueurs ({allUsers.length})</div>
+                  {allUsers.map((u, i) => {
+                    const banStatus = getBanStatus(u);
+                    return (
+                      <div key={i} onClick={() => { if (u.id !== user.id) { setSelectedPlayer(u); setShowBanMenu(false); } }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111`, cursor: u.id !== user.id ? 'pointer' : 'default', transition: 'background 0.15s' }}
+                        onMouseEnter={e => { if (u.id !== user.id) e.currentTarget.style.background = '#161616'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden', flexShrink: 0 }}>
+                          {u.avatar_url ? <img src={u.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: banStatus ? '#ef4444' : light }}>{u.username}</div>
+                          {u.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{u.discord_username}</div>}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
+                          {banStatus && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>BANNI {banStatus}</span>}
+                          {u.id !== user.id && <span style={{ fontSize: '11px', color: muted }}>›</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </>
         )}
