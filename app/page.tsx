@@ -41,6 +41,42 @@ function ProfileInput({ value, userId, field, label, onSave, gold, dark, border,
   );
 }
 
+function ImageUpload({ userId, bucket, field, label, onSave, gold, dark, border, muted }: any) {
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState('');
+
+  async function handleUpload(e: any) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `${userId}-${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+      const url = urlData.publicUrl;
+      await supabase.from('profiles').update({ [field]: url }).eq('id', userId);
+      setPreview(url);
+      await onSave(userId);
+    }
+    setUploading(false);
+  }
+
+  return (
+    <div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '10px 14px', cursor: 'pointer' }}>
+        <span style={{ fontSize: '13px', color: uploading ? muted : '#e2e8f0', flex: 1 }}>
+          {uploading ? 'Upload en cours...' : `Choisir une image`}
+        </span>
+        <span style={{ background: gold, color: dark, fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '4px' }}>
+          {uploading ? '...' : 'Parcourir'}
+        </span>
+        <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} disabled={uploading} />
+      </label>
+    </div>
+  );
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState('ladders');
   const [activeLadder, setActiveLadder] = useState('1v1');
@@ -420,12 +456,12 @@ export default function Home() {
                     <ProfileInput value={profile?.username || ''} userId={user.id} field="username" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>URL de la banni&egrave;re</div>
-                    <ProfileInput value={profile?.banner_url || ''} userId={user.id} field="banner_url" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} placeholder="https://..." />
+                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Banni&egrave;re</div>
+                    <ImageUpload userId={user.id} bucket="banners" field="banner_url" label="Changer la banniere" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>URL de l&apos;avatar</div>
-                    <ProfileInput value={profile?.avatar_url || ''} userId={user.id} field="avatar_url" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} placeholder="https://..." />
+                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Avatar</div>
+                    <ImageUpload userId={user.id} bucket="avatars" field="avatar_url" label="Changer l avatar" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
                   </div>
                   <div style={{ borderTop: `1px solid ${border}`, paddingTop: '12px' }}>
                     <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Discord</div>
