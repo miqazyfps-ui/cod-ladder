@@ -458,10 +458,12 @@ export default function Home() {
                   <div>
                     <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Banni&egrave;re</div>
                     <ImageUpload userId={user.id} bucket="banners" field="banner_url" label="Changer la banniere" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
+                    <div style={{ fontSize: '10px', color: muted, marginTop: '4px' }}>Recommand&eacute; : 1200 x 300 px &middot; JPG, PNG &middot; Max 5MB</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Avatar</div>
                     <ImageUpload userId={user.id} bucket="avatars" field="avatar_url" label="Changer l avatar" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
+                    <div style={{ fontSize: '10px', color: muted, marginTop: '4px' }}>Recommand&eacute; : 200 x 200 px &middot; JPG, PNG &middot; Max 2MB</div>
                   </div>
                   <div style={{ borderTop: `1px solid ${border}`, paddingTop: '12px' }}>
                     <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Discord</div>
