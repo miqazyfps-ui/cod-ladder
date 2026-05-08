@@ -261,26 +261,40 @@ export default function Home() {
   }
 
   async function toggleAdmin(userId: string, currentVal: boolean) {
-    const { error } = await supabase.from('profiles').update({ is_admin: !currentVal }).eq('id', userId);
+    const newVal = !currentVal;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_admin: newVal })
+      .eq('id', userId);
+    
     if (error) {
-      console.error('Toggle admin error:', error);
-      alert('Erreur RLS - Verifier les permissions dans Supabase');
+      alert('Erreur: ' + error.message);
     } else {
+      setSelectedPlayer((prev: any) => prev ? {...prev, is_admin: newVal} : null);
       await fetchAllUsers();
     }
   }
 
   async function banPlayer(userId: string, duration: string) {
-    let bannedUntil = null;
+    let bannedUntil: string | null = null;
     if (duration === '1h') bannedUntil = new Date(Date.now() + 3600000).toISOString();
     else if (duration === '24h') bannedUntil = new Date(Date.now() + 86400000).toISOString();
     else if (duration === '48h') bannedUntil = new Date(Date.now() + 172800000).toISOString();
     else if (duration === '7j') bannedUntil = new Date(Date.now() + 604800000).toISOString();
     else if (duration === 'permanent') bannedUntil = '2099-01-01T00:00:00.000Z';
-    await supabase.from('profiles').update({ is_banned: true, banned_until: bannedUntil }).eq('id', userId);
+    
+    const { error } = await supabase.from('profiles').update({ 
+      is_banned: true, 
+      banned_until: bannedUntil 
+    }).eq('id', userId);
+    
+    if (error) {
+      alert('Erreur ban: ' + error.message);
+      return;
+    }
     setShowBanMenu(false);
     setSelectedPlayer(null);
-    fetchAllUsers();
+    await fetchAllUsers();
   }
 
   async function unbanPlayer(userId: string) {
@@ -641,6 +655,21 @@ export default function Home() {
                 Black Ops 7 &mdash; {selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} &mdash; Mode
               </div>
             </div>
+
+            {/* Banniere BO7 */}
+            <div style={{ position: 'relative', height: '120px', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+              <img src="/images/bo7.jpg" alt="Black Ops 7" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>Call of Duty</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px', textTransform: 'uppercase' as const, letterSpacing: '2px' }}>
+                    {selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'}
+                  </div>
+                </div>
+              </div>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '600px' }}>
                 {LADDER_GROUPS.map(g => (
@@ -987,7 +1016,7 @@ export default function Home() {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {['tous les matchs', 'matchs', 'joueurs'].map(t => (
+              {['tous les matchs', 'matchs', 'joueurs', 'rangs'].map(t => (
                 <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
                   {t}
                 </button>
@@ -1034,6 +1063,34 @@ export default function Home() {
                       <button onClick={() => deleteMatch(m.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
                         Supprimer
                       </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'rangs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Aper&ccedil;u des rangs</div>
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                  {[
+                    { range: 'LVL 1-19', label: 'BRONZE', icon: '🛡️', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)', border: 'rgba(205,127,50,0.4)', desc: 'Débutant' },
+                    { range: 'LVL 20-49', label: 'ARGENT', icon: '🔰', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', desc: 'Confirmé' },
+                    { range: 'LVL 50-99', label: 'OR', icon: '⭐', color: '#00ff88', bg: 'rgba(0,255,136,0.15)', border: 'rgba(0,255,136,0.4)', desc: 'Expérimenté' },
+                    { range: 'LVL 100-199', label: 'PLATINE', icon: '⚡', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.4)', desc: '&Eacute;lite' },
+                    { range: 'LVL 200-299', label: 'DIAMANT', icon: '💎', color: '#00ccff', bg: 'rgba(0,204,255,0.15)', border: 'rgba(0,204,255,0.4)', desc: 'Maître' },
+                    { range: 'LVL 300-399', label: 'MAITRE', icon: '🔥', color: '#ff8800', bg: 'rgba(255,136,0,0.15)', border: 'rgba(255,136,0,0.4)', desc: 'Champion' },
+                    { range: 'LVL 400-500', label: 'LEGENDAIRE', icon: '👑', color: '#ff4444', bg: 'rgba(255,68,68,0.15)', border: 'rgba(255,68,68,0.4)', desc: 'Légende' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: r.bg, border: `1px solid ${r.border}`, borderRadius: '8px' }}>
+                      <div style={{ fontSize: '28px' }}>{r.icon}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: r.color, textShadow: `0 0 10px ${r.color}66` }}>{r.label}</div>
+                        <div style={{ fontSize: '11px', color: muted, marginTop: '2px' }}>{r.range} &middot; {r.desc}</div>
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '4px', background: r.bg, color: r.color, border: `1px solid ${r.border}` }}>
+                        {r.icon} {r.label}
+                      </div>
                     </div>
                   ))}
                 </div>
