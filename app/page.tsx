@@ -160,7 +160,7 @@ function ImageUpload({ userId, bucket, field, label, onSave, gold, dark, border,
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('jeux');
+  const [activeTab, setActiveTab] = useState('accueil');
   const [activeLadder, setActiveLadder] = useState('1v1');
   const [selectedGame, setSelectedGame] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -376,7 +376,7 @@ export default function Home() {
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('jeux')} />
         <div style={{ display: 'flex', gap: '4px' }}>
-          {['jeux', 'tournois', 'classement'].map(tab => (
+          {['accueil', 'jeux', 'tournois', 'classement'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
@@ -398,26 +398,96 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO */}
-      <div style={{ background: dark, padding: '32px 24px 24px', textAlign: 'center', borderBottom: `1px solid ${border}` }}>
-        <div style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', color: gold, background: goldBg, border: `1px solid ${greenBorder}`, padding: '4px 14px', borderRadius: '20px', marginBottom: '14px' }}>
-          Call of Duty Black Ops 7
-        </div>
-        <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', marginBottom: '6px' }}>
-          Domine la <span style={{ color: gold }}>comp&eacute;tition</span>
-        </h1>
-        <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>Ladders 1v1 &mdash; 5v5 &middot; Classements en temps r&eacute;el</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button onClick={() => setActiveTab('jeux')} style={{ background: gold, color: dark, border: 'none', padding: '10px 22px', borderRadius: '6px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
-            Rejoindre un ladder
-          </button>
-          <button onClick={() => setActiveTab('classement')} style={{ background: 'transparent', color: '#888', border: `1px solid ${border}`, padding: '10px 22px', borderRadius: '6px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
-            Voir le classement
-          </button>
-        </div>
-      </div>
+
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+
+
+        {/* ACCUEIL */}
+        {activeTab === 'accueil' && (
+          <>
+            {/* HERO BANNIERE */}
+            <div style={{ position: 'relative', height: '420px', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px' }}>
+              <img src="/images/banner_home.png" alt="Clutch2Win" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 20%, rgba(0,0,0,0.2) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', padding: '0 48px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '3px', color: gold, textTransform: 'uppercase' as const, marginBottom: '12px' }}>Plateforme Esport</div>
+                <h1 style={{ fontSize: '52px', fontWeight: 900, color: '#fff', margin: '0 0 12px', lineHeight: 1.1 }}>
+                  Domine la<br/><span style={{ color: gold }}>comp&eacute;tition</span>
+                </h1>
+                <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.7)', marginBottom: '28px', maxWidth: '480px' }}>
+                  Ladders 1v1 &mdash; 6v6 &middot; Call of Duty &middot; FC 26 &middot; Classements en temps r&eacute;el
+                </p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => { if (!user) { setShowAuth(true); } else { setActiveTab('jeux'); } }} style={{ background: gold, color: dark, border: 'none', padding: '14px 28px', borderRadius: '8px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                    {user ? 'Jouer maintenant' : 'Rejoindre gratuitement'}
+                  </button>
+                  <button onClick={() => setActiveTab('classement')} style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '14px 28px', borderRadius: '8px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                    Voir le classement
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* STATS EN DIRECT */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '32px' }}>
+              {[
+                { label: 'Joueurs inscrits', value: leaderboard.length.toString(), icon: '👥' },
+                { label: 'Matchs en cours', value: liveMatches.length.toString(), icon: '🔴' },
+                { label: 'Matchs joués', value: matches.length.toString(), icon: '🏆' },
+              ].map((stat, i) => (
+                <div key={i} style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ fontSize: '32px' }}>{stat.icon}</div>
+                  <div>
+                    <div style={{ fontSize: '28px', fontWeight: 900, color: gold }}>{stat.value}</div>
+                    <div style={{ fontSize: '11px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px', marginTop: '2px' }}>{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* TOP 3 JOUEURS */}
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '16px' }}>Top joueurs</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                {leaderboard.slice(0, 3).map((p, i) => (
+                  <div key={i} style={{ background: card, border: `1px solid ${i === 0 ? gold : border}`, borderRadius: '12px', padding: '24px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                    {i === 0 && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: gold }} />}
+                    <div style={{ fontSize: i === 0 ? '28px' : '20px', marginBottom: '8px' }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: goldBg, border: `2px solid ${i === 0 ? gold : border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 900, color: gold, margin: '0 auto 12px', overflow: 'hidden' }}>
+                      {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: '15px', fontWeight: 800, color: light, marginBottom: '4px' }}>{p.username}</div>
+                    <div style={{ fontSize: '22px', fontWeight: 900, color: gold }}>{p.total_points || 0} pts</div>
+                    <div style={{ fontSize: '11px', color: muted, marginTop: '4px' }}>{p.total_wins || 0} victoires</div>
+                  </div>
+                ))}
+                {leaderboard.length === 0 && (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: muted, background: card, borderRadius: '12px', border: `1px solid ${border}` }}>
+                    Aucun joueur class&eacute; pour l&apos;instant
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* CALL TO ACTION */}
+            <div style={{ position: 'relative', height: '260px', borderRadius: '16px', overflow: 'hidden' }}>
+              <img src="/images/cta_home.png" alt="Rejoindre" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px' }}>
+                <div style={{ fontSize: '28px', fontWeight: 900, color: '#fff', marginBottom: '10px' }}>
+                  Pr&ecirc;t &agrave; dominer ?
+                </div>
+                <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '24px' }}>
+                  Cr&eacute;e ton compte gratuitement et commence &agrave; jouer
+                </div>
+                <button onClick={() => { if (!user) { setShowAuth(true); } else { setActiveTab('jeux'); } }} style={{ background: gold, color: dark, border: 'none', padding: '14px 36px', borderRadius: '8px', fontWeight: 800, fontSize: '15px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                  {user ? 'Jouer maintenant' : 'Créer mon compte'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* LADDERS - ETAPE 1: Categorie */}
         {activeTab === 'jeux' && !selectedCategory && (
@@ -479,7 +549,7 @@ export default function Home() {
                   <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>EA Sports</div>
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>FC 26</div>
                   <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' as const }}>
-                    {['1v1', '2v2', '3v3', '4v4', '5v5', '6v6'].map(m => (
+                    {['1v1', '2v2'].map(m => (
                       <span key={m} style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,255,136,0.2)', color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{m}</span>
                     ))}
                   </div>
