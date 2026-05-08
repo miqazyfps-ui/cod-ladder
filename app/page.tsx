@@ -263,10 +263,10 @@ export default function Home() {
   async function toggleAdmin(userId: string, currentVal: boolean) {
     const { error } = await supabase.from('profiles').update({ is_admin: !currentVal }).eq('id', userId);
     if (error) {
-      alert('Erreur: ' + error.message);
+      console.error('Toggle admin error:', error);
+      alert('Erreur RLS - Verifier les permissions dans Supabase');
     } else {
       await fetchAllUsers();
-      alert(currentVal ? 'Admin retire avec succes' : 'Admin accorde avec succes');
     }
   }
 
@@ -331,13 +331,13 @@ export default function Home() {
   }
 
   function getLevelBadge(level: number) {
-    if (level >= 400) return { label: 'LEGENDAIRE', color: '#ff4444', bg: 'rgba(255,68,68,0.15)' };
-    if (level >= 300) return { label: 'MAITRE', color: '#ff8800', bg: 'rgba(255,136,0,0.15)' };
-    if (level >= 200) return { label: 'DIAMANT', color: '#00ccff', bg: 'rgba(0,204,255,0.15)' };
-    if (level >= 100) return { label: 'PLATINE', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' };
-    if (level >= 50) return { label: 'OR', color: '#00ff88', bg: 'rgba(0,255,136,0.15)' };
-    if (level >= 20) return { label: 'ARGENT', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' };
-    return { label: 'BRONZE', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)' };
+    if (level >= 400) return { label: 'LEGENDAIRE', icon: '👑', color: '#ff4444', bg: 'rgba(255,68,68,0.15)', border: 'rgba(255,68,68,0.4)', glow: '0 0 12px rgba(255,68,68,0.4)' };
+    if (level >= 300) return { label: 'MAITRE', icon: '🔥', color: '#ff8800', bg: 'rgba(255,136,0,0.15)', border: 'rgba(255,136,0,0.4)', glow: '0 0 12px rgba(255,136,0,0.4)' };
+    if (level >= 200) return { label: 'DIAMANT', icon: '💎', color: '#00ccff', bg: 'rgba(0,204,255,0.15)', border: 'rgba(0,204,255,0.4)', glow: '0 0 12px rgba(0,204,255,0.4)' };
+    if (level >= 100) return { label: 'PLATINE', icon: '⚡', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.4)', glow: '0 0 12px rgba(167,139,250,0.4)' };
+    if (level >= 50) return { label: 'OR', icon: '⭐', color: '#00ff88', bg: 'rgba(0,255,136,0.15)', border: 'rgba(0,255,136,0.4)', glow: '0 0 8px rgba(0,255,136,0.3)' };
+    if (level >= 20) return { label: 'ARGENT', icon: '🔰', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', glow: 'none' };
+    return { label: 'BRONZE', icon: '🛡️', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)', border: 'rgba(205,127,50,0.4)', glow: 'none' };
   }
   const goldBg = 'rgba(0,255,136,0.1)';
   const greenBorder = 'rgba(0,255,136,0.3)';
@@ -560,39 +560,13 @@ export default function Home() {
           </>
         )}
 
-        {/* LADDERS - ETAPE 1: Categorie */}
-        {activeTab === 'jeux' && !selectedCategory && (
+        {/* JEUX - ETAPE 1: Selection du jeu */}
+        {activeTab === 'jeux' && !selectedGame && (
           <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '20px' }}>S&eacute;lectionner une cat&eacute;gorie</div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '500px' }}>
-                {[
-                  { id: 'hardcore', label: 'Hardcore', icon: '💀', color: '#ef4444' },
-                  { id: 'normal', label: 'Normal', icon: '⚔️', color: gold },
-                ].map(cat => (
-                  <div key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                    style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '40px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>{cat.icon}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: cat.color, letterSpacing: '2px', textTransform: 'uppercase' as const }}>{cat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* LADDERS - ETAPE 2: Jeu */}
-        {activeTab === 'jeux' && selectedCategory && !selectedGame && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <button onClick={() => setSelectedCategory('')} style={{ background: goldBg, border: `1px solid ${gold}`, color: gold, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: selectedCategory === 'hardcore' ? '#ef4444' : gold }}>
-                {selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} &mdash; S&eacute;lectionner un jeu
-              </div>
-            </div>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, marginBottom: '20px', textShadow: '0 0 10px rgba(0,255,136,0.5)' }}>S&eacute;lectionner un jeu</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+
+              {/* BO7 */}
               <div onClick={() => setSelectedGame('bo7')} style={{ cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', border: `1px solid ${border}`, position: 'relative', height: '220px', transition: 'border-color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
@@ -611,7 +585,7 @@ export default function Home() {
               </div>
 
               {/* FC 26 */}
-              <div onClick={() => setSelectedGame('fc26')} style={{ cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', border: `1px solid ${border}`, position: 'relative', height: '220px', transition: 'border-color 0.2s' }}
+              <div onClick={() => { setSelectedGame('fc26'); setSelectedCategory('normal'); setSelectedGroup(''); }} style={{ cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', border: `1px solid ${border}`, position: 'relative', height: '220px', transition: 'border-color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
                 <img src="/images/fc26.jpg" alt="FC 26" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -627,16 +601,45 @@ export default function Home() {
                 </div>
                 <div style={{ position: 'absolute', top: '12px', right: '12px', background: gold, color: dark, fontSize: '10px', fontWeight: 800, padding: '4px 10px', borderRadius: '4px', letterSpacing: '1px' }}>ACTIF</div>
               </div>
+
             </div>
           </>
         )}
 
-        {/* LADDERS - ETAPE 3: Groupe de mode */}
-        {activeTab === 'jeux' && selectedGame && !selectedGroup && (
+        {/* BO7 - ETAPE 2: Categorie (Hardcore/Normal) */}
+        {activeTab === 'jeux' && selectedGame === 'bo7' && !selectedCategory && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <button onClick={() => setSelectedGame('')} style={{ background: goldBg, border: `1px solid ${gold}`, color: gold, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>Black Ops 7 &mdash; Choisir un mode</div>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold }}>Black Ops 7 &mdash; Cat&eacute;gorie</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '500px' }}>
+                {[
+                  { id: 'hardcore', label: 'Hardcore', icon: '💀', color: '#ef4444' },
+                  { id: 'normal', label: 'Normal', icon: '⚔️', color: gold },
+                ].map(cat => (
+                  <div key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+                    style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '40px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>{cat.icon}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: cat.color, letterSpacing: '2px', textTransform: 'uppercase' as const, textShadow: `0 0 20px ${cat.color}66` }}>{cat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* BO7 - ETAPE 3: Groupe de mode */}
+        {activeTab === 'jeux' && selectedGame === 'bo7' && selectedCategory && !selectedGroup && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setSelectedCategory('')} style={{ background: goldBg, border: `1px solid ${gold}`, color: gold, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: selectedCategory === 'hardcore' ? '#ef4444' : gold, textShadow: `0 0 10px ${selectedCategory === 'hardcore' ? 'rgba(239,68,68,0.5)' : 'rgba(0,255,136,0.5)'}` }}>
+                Black Ops 7 &mdash; {selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} &mdash; Mode
+              </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '600px' }}>
@@ -646,7 +649,7 @@ export default function Home() {
                     onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
                     <div style={{ fontSize: '36px', marginBottom: '12px' }}>{g.icon}</div>
-                    <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '12px' }}>{g.name}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '12px', textShadow: '0 0 10px rgba(0,255,136,0.3)' }}>{g.name}</div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
                       {g.modes.map(m => (
                         <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{m}</span>
@@ -659,7 +662,52 @@ export default function Home() {
           </>
         )}
 
-        {/* LADDERS - ETAPE 4: Matchs et classement */}
+        {/* FC26 - ETAPE 2: Modes directement */}
+        {activeTab === 'jeux' && selectedGame === 'fc26' && !selectedGroup && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => { setSelectedGame(''); setSelectedCategory(''); }} style={{ background: goldBg, border: `1px solid ${gold}`, color: gold, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold }}>FC 26 &mdash; Choisir un mode</div>
+            </div>
+
+            {/* Banniere FC26 */}
+            <div style={{ position: 'relative', height: '120px', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+              <img src="/images/fc26.jpg" alt="FC 26" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 24px' }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>EA Sports</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>FC 26</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '500px' }}>
+                {[
+                  { id: 'fc_1v1', name: 'Duel de Champion', icon: '⚽', modes: ['1v1'], desc: '1 contre 1' },
+                  { id: 'fc_2v2', name: 'Coop', icon: '🤝', modes: ['2v2'], desc: '2 contre 2' },
+                ].map(g => (
+                  <div key={g.id} onClick={() => { setSelectedGroup(g.id); setActiveLadder(g.modes[0]); }}
+                    style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '32px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                    <div style={{ fontSize: '40px', marginBottom: '12px' }}>{g.icon}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '8px', textShadow: '0 0 10px rgba(0,255,136,0.3)' }}>{g.name}</div>
+                    <div style={{ fontSize: '12px', color: muted, marginBottom: '12px' }}>{g.desc}</div>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      {g.modes.map(m => (
+                        <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* MATCHS ET CLASSEMENT - BO7 et FC26 */}
         {activeTab === 'jeux' && selectedGame && selectedGroup && (
           <>
             {/* Bannière du jeu */}
@@ -668,33 +716,34 @@ export default function Home() {
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%)' }} />
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: '#00ff88', textTransform: 'uppercase' as const, marginBottom: '4px' }}>{selectedGame === 'bo7' ? 'Call of Duty' : 'EA Sports'}</div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>{selectedGame === 'bo7' ? 'Call of Duty' : 'EA Sports'}</div>
                   <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>{selectedGame === 'bo7' ? 'Black Ops 7' : 'FC 26'}</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px', textTransform: 'uppercase' as const, letterSpacing: '2px' }}>{selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} · {LADDER_GROUPS.find(g => g.id === selectedGroup)?.name}</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px', textTransform: 'uppercase' as const, letterSpacing: '2px' }}>
+                    {selectedGame === 'bo7' ? (selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal') : ''} · {selectedGame === 'fc26' ? (selectedGroup === 'fc_1v1' ? 'Duel de Champion' : 'Coop') : LADDER_GROUPS.find(g => g.id === selectedGroup)?.name}
+                  </div>
                 </div>
                 <button onClick={() => setSelectedGroup('')} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
               </div>
             </div>
 
-
-            {/* Sous-modes + bouton rejoindre */}
+            {/* Sous-modes + bouton lancer */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {(LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.length || 0) > 1 && 
+                {selectedGame === 'bo7' && (LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.length || 0) > 1 &&
                   LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.map(m => (
                     <button key={m} onClick={() => setActiveLadder(m)} style={{ background: activeLadder === m ? goldBg : card, border: `1px solid ${activeLadder === m ? gold : border}`, color: activeLadder === m ? gold : muted, padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{m}</button>
                   ))
                 }
               </div>
-              <button onClick={() => { if (!user) { setShowAuth(true); } else { alert('Fonctionnalite bientot disponible !'); } }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
+              <button onClick={() => { if (!user) setShowAuth(true); }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
                 Lancer un match
               </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>
-                  Matchs en cours &mdash; {activeLadder} &mdash; Black Ops 7
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, marginBottom: '14px' }}>
+                  Matchs en cours &mdash; {activeLadder} &mdash; {selectedGame === 'bo7' ? 'Black Ops 7' : 'FC 26'}
                 </div>
                 {loading ? (
                   <div style={{ color: muted, padding: '40px', textAlign: 'center' }}>Chargement...</div>
@@ -721,13 +770,11 @@ export default function Home() {
 
                 {completedMatches.length > 0 && (
                   <>
-                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, margin: '20px 0 14px' }}>
-                      Historique des matchs
-                    </div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, margin: '20px 0 14px' }}>Historique</div>
                     {completedMatches.slice(0, 5).map((m, i) => (
                       <div key={i} style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
                         <div style={{ fontSize: '10px', color: muted, minWidth: '60px' }}>
-                          {m.ended_at ? new Date(m.ended_at).toLocaleDateString('fr-FR') : 'Termin&eacute;'}
+                          {m.ended_at ? new Date(m.ended_at).toLocaleDateString('fr-FR') : 'Terminé'}
                         </div>
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_a_id ? gold : light }}>{m.team_a?.name || 'TBD'}</div>
@@ -736,7 +783,7 @@ export default function Home() {
                           <div style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_b_id ? gold : light }}>{m.score_b}</div>
                           <div style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_b_id ? gold : light }}>{m.team_b?.name || 'TBD'}</div>
                         </div>
-                        <div style={{ fontSize: '10px', color: muted }}>Termin&eacute;</div>
+                        <div style={{ fontSize: '10px', color: muted }}>Terminé</div>
                       </div>
                     ))}
                   </>
@@ -751,7 +798,9 @@ export default function Home() {
                   ) : leaderboard.slice(0, 5).map((p, i) => (
                     <div key={i} style={lbRow}>
                       <div style={{ fontSize: '12px', fontWeight: 700, color: i === 0 ? gold : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : muted, width: '18px', textAlign: 'center' }}>{i + 1}</div>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: gold }}>{p.username?.[0]?.toUpperCase()}</div>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                        {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
+                      </div>
                       <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{p.username}</div>
                       <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{p.total_points || 0}</div>
                     </div>
@@ -761,7 +810,7 @@ export default function Home() {
                 <div style={panel}>
                   <div style={panelTitle}>Stats</div>
                   <div style={lbRow}>
-                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>Matchs jou&eacute;s</div>
+                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>Matchs joués</div>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{matches.length}</div>
                   </div>
                   <div style={lbRow}>
@@ -769,7 +818,7 @@ export default function Home() {
                     <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{liveMatches.length}</div>
                   </div>
                   <div style={lbRow}>
-                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>Joueurs class&eacute;s</div>
+                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>Joueurs classés</div>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{leaderboard.length}</div>
                   </div>
                 </div>
@@ -837,8 +886,9 @@ export default function Home() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                     <div style={{ fontSize: '20px', fontWeight: 800, color: light }}>{profile?.username || 'Joueur'}</div>
-                    <div style={{ fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', background: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).bg, color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color }}>
-                      LVL {getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)} · {getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).label}
+                    <div style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '6px', background: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).bg, color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color, border: `1px solid ${getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).border}`, boxShadow: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).glow, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '14px' }}>{getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).icon}</span>
+                      <span>LVL {getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)} &middot; {getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).label}</span>
                     </div>
                   </div>
                   <div style={{ fontSize: '12px', color: muted }}>{user.email}</div>
@@ -937,7 +987,7 @@ export default function Home() {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {['matchs', 'joueurs', 'tous les matchs'].map(t => (
+              {['tous les matchs', 'matchs', 'joueurs'].map(t => (
                 <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
                   {t}
                 </button>
