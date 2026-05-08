@@ -75,22 +75,37 @@ function AdminScoreForm({ match, onUpdate, onDelete, gold, dark, border, muted }
     setSaving(false);
   }
 
+  async function saveScoreOnly() {
+    setSaving(true);
+    await onUpdate(match.id, scoreA, scoreB, null);
+    setSaving(false);
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <input type="number" value={scoreA} onChange={e => setScoreA(parseInt(e.target.value))} style={{ width: '60px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '6px 10px', color: gold, fontSize: '16px', fontWeight: 900, textAlign: 'center' as const }} />
-        <span style={{ color: muted }}>—</span>
-        <input type="number" value={scoreB} onChange={e => setScoreB(parseInt(e.target.value))} style={{ width: '60px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '6px 10px', color: gold, fontSize: '16px', fontWeight: 900, textAlign: 'center' as const }} />
+        <div style={{ textAlign: 'center' as const }}>
+          <div style={{ fontSize: '10px', color: muted, marginBottom: '4px' }}>Equipe A</div>
+          <input type="number" value={scoreA} onChange={e => setScoreA(parseInt(e.target.value) || 0)} style={{ width: '60px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '6px 10px', color: gold, fontSize: '16px', fontWeight: 900, textAlign: 'center' as const }} />
+        </div>
+        <span style={{ color: muted, marginTop: '16px' }}>—</span>
+        <div style={{ textAlign: 'center' as const }}>
+          <div style={{ fontSize: '10px', color: muted, marginBottom: '4px' }}>Equipe B</div>
+          <input type="number" value={scoreB} onChange={e => setScoreB(parseInt(e.target.value) || 0)} style={{ width: '60px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '6px 10px', color: gold, fontSize: '16px', fontWeight: 900, textAlign: 'center' as const }} />
+        </div>
       </div>
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
-        <button onClick={() => finish(match.team_a_id)} disabled={saving} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-          Victoire A
+        <button onClick={() => finish(match.team_a_id)} disabled={saving} style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', color: gold, padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          🏆 Victoire A
         </button>
-        <button onClick={() => finish(match.team_b_id)} disabled={saving} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-          Victoire B
+        <button onClick={() => finish(match.team_b_id)} disabled={saving} style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', color: gold, padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          🏆 Victoire B
         </button>
-        <button onClick={() => onDelete(match.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-          Supprimer
+        <button onClick={saveScoreOnly} disabled={saving} style={{ background: 'rgba(100,116,139,0.1)', border: '1px solid rgba(100,116,139,0.3)', color: '#94a3b8', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          💾 Scores seuls
+        </button>
+        <button onClick={() => onDelete(match.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '6px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          🗑️ Supprimer
         </button>
       </div>
     </div>
@@ -170,6 +185,14 @@ export default function Home() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [showBanMenu, setShowBanMenu] = useState(false);
+  const [heroSlide, setHeroSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroSlide(prev => (prev + 1) % 2);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -221,8 +244,14 @@ export default function Home() {
     }
   }
 
-  async function updateScore(matchId: string, scoreA: number, scoreB: number, winnerId: string) {
-    await supabase.from('matches').update({ score_a: scoreA, score_b: scoreB, winner_id: winnerId, status: 'completed', ended_at: new Date().toISOString() }).eq('id', matchId);
+  async function updateScore(matchId: string, scoreA: number, scoreB: number, winnerId: string | null) {
+    const updateData: any = { score_a: scoreA, score_b: scoreB };
+    if (winnerId) {
+      updateData.winner_id = winnerId;
+      updateData.status = 'completed';
+      updateData.ended_at = new Date().toISOString();
+    }
+    await supabase.from('matches').update(updateData).eq('id', matchId);
     fetchData();
   }
 
@@ -232,8 +261,13 @@ export default function Home() {
   }
 
   async function toggleAdmin(userId: string, currentVal: boolean) {
-    await supabase.from('profiles').update({ is_admin: !currentVal }).eq('id', userId);
-    fetchAllUsers();
+    const { error } = await supabase.from('profiles').update({ is_admin: !currentVal }).eq('id', userId);
+    if (error) {
+      alert('Erreur: ' + error.message);
+    } else {
+      await fetchAllUsers();
+      alert(currentVal ? 'Admin retire avec succes' : 'Admin accorde avec succes');
+    }
   }
 
   async function banPlayer(userId: string, duration: string) {
@@ -250,8 +284,12 @@ export default function Home() {
   }
 
   async function unbanPlayer(userId: string) {
-    await supabase.from('profiles').update({ is_banned: false, banned_until: null }).eq('id', userId);
-    fetchAllUsers();
+    const { error } = await supabase.from('profiles').update({ is_banned: false, banned_until: null }).eq('id', userId);
+    if (!error) {
+      setSelectedPlayer(null);
+      setShowBanMenu(false);
+      await fetchAllUsers();
+    }
   }
 
   function getBanStatus(user: any) {
@@ -287,6 +325,20 @@ export default function Home() {
   const completedMatches = matches.filter(m => m.status === 'completed');
 
   const gold = '#00ff88';
+
+  function getLevel(points: number) {
+    return Math.min(500, Math.floor(points / 10) + 1);
+  }
+
+  function getLevelBadge(level: number) {
+    if (level >= 400) return { label: 'LEGENDAIRE', color: '#ff4444', bg: 'rgba(255,68,68,0.15)' };
+    if (level >= 300) return { label: 'MAITRE', color: '#ff8800', bg: 'rgba(255,136,0,0.15)' };
+    if (level >= 200) return { label: 'DIAMANT', color: '#00ccff', bg: 'rgba(0,204,255,0.15)' };
+    if (level >= 100) return { label: 'PLATINE', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' };
+    if (level >= 50) return { label: 'OR', color: '#00ff88', bg: 'rgba(0,255,136,0.15)' };
+    if (level >= 20) return { label: 'ARGENT', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' };
+    return { label: 'BRONZE', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)' };
+  }
   const goldBg = 'rgba(0,255,136,0.1)';
   const greenBorder = 'rgba(0,255,136,0.3)';
   const dark = '#0a0a0a';
@@ -477,19 +529,32 @@ export default function Home() {
               )}
             </div>
 
-            {/* CTA FC26 */}
+            {/* SLIDER JEUX */}
             <div style={{ position: 'relative', height: '200px', borderRadius: '16px', overflow: 'hidden' }}>
-              <img src="/images/fc26.jpg" alt="FC 26" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.72)' }} />
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '6px' }}>Nouveau</div>
-                  <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff', marginBottom: '4px' }}>EA Sports FC 26</div>
-                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Ladders 1v1 et 2v2 disponibles</div>
+              {[
+                { img: '/images/bo7.jpg', badge: 'Call of Duty', title: 'Black Ops 7', desc: 'Ladders 1v1 jusqu’au 6v6 disponibles', game: 'bo7', pos: 'center 30%' },
+                { img: '/images/fc26.jpg', badge: 'EA Sports', title: 'FC 26', desc: 'Ladders 1v1 et 2v2 disponibles', game: 'fc26', pos: 'center 30%' },
+              ].map((slide, i) => (
+                <div key={i} style={{ position: 'absolute', inset: 0, opacity: heroSlide === i ? 1 : 0, transition: 'opacity 0.8s ease', pointerEvents: heroSlide === i ? 'auto' : 'none' }}>
+                  <img src={slide.img} alt={slide.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: slide.pos }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.72)' }} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '6px' }}>{slide.badge}</div>
+                      <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff', marginBottom: '4px' }}>{slide.title}</div>
+                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>{slide.desc}</div>
+                    </div>
+                    <button onClick={() => { setSelectedGame(slide.game); setActiveTab('jeux'); }} style={{ background: gold, color: dark, border: 'none', padding: '12px 28px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                      Jouer
+                    </button>
+                  </div>
                 </div>
-                <button onClick={() => { setSelectedGame('fc26'); setActiveTab('jeux'); }} style={{ background: gold, color: dark, border: 'none', padding: '12px 28px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
-                  Jouer
-                </button>
+              ))}
+              {/* Indicateurs */}
+              <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
+                {[0, 1].map(i => (
+                  <div key={i} onClick={() => setHeroSlide(i)} style={{ width: heroSlide === i ? '20px' : '6px', height: '6px', borderRadius: '3px', background: heroSlide === i ? gold : 'rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'all 0.3s' }} />
+                ))}
               </div>
             </div>
           </>
@@ -770,8 +835,13 @@ export default function Home() {
               </div>
               <div style={{ padding: '50px 24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: light }}>{profile?.username || 'Joueur'}</div>
-                  <div style={{ fontSize: '12px', color: muted, marginTop: '4px' }}>{user.email}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: light }}>{profile?.username || 'Joueur'}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', background: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).bg, color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color }}>
+                      LVL {getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)} · {getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).label}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: muted }}>{user.email}</div>
                   {profile?.discord_username && (
                     <div style={{ fontSize: '12px', color: '#5865f2', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>Discord:</span><span style={{ fontWeight: 700 }}>{profile.discord_username}</span>
@@ -867,7 +937,7 @@ export default function Home() {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {['matchs', 'joueurs'].map(t => (
+              {['matchs', 'joueurs', 'tous les matchs'].map(t => (
                 <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
                   {t}
                 </button>
@@ -917,6 +987,26 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {adminTab === 'tous les matchs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Tous les matchs ({matches.length})</div>
+                {matches.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: muted }}>Aucun match</div>
+                ) : matches.map((m, i) => (
+                  <div key={i} style={{ padding: '14px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: m.status === 'live' ? 'rgba(239,68,68,0.15)' : m.status === 'completed' ? 'rgba(0,255,136,0.1)' : 'rgba(100,116,139,0.1)', color: m.status === 'live' ? '#ef4444' : m.status === 'completed' ? gold : muted }}>{m.status?.toUpperCase()}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name || 'TBD'}</span>
+                      <span style={{ color: muted }}>vs</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name || 'TBD'}</span>
+                      <span style={{ color: muted, fontSize: '13px' }}>{m.score_a} — {m.score_b}</span>
+                    </div>
+                    <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                  </div>
+                ))}
               </div>
             )}
 
