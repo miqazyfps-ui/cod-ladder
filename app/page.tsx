@@ -14,6 +14,33 @@ const LADDERS = [
   { mode: '5v5', label: 'Team', size: 5 },
 ];
 
+
+function ProfileInput({ value, userId, field, label, onSave, gold, dark, border, muted, placeholder }: any) {
+  const [val, setVal] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await supabase.from('profiles').update({ [field]: val }).eq('id', userId);
+    await onSave(userId);
+    setSaving(false);
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <input
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        placeholder={placeholder || ''}
+        style={{ flex: 1, background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '8px 12px', color: '#e2e8f0', fontSize: '13px' }}
+      />
+      <button onClick={save} disabled={saving} style={{ background: gold, color: dark, border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+        {saving ? '...' : label}
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState('ladders');
   const [activeLadder, setActiveLadder] = useState('1v1');
@@ -340,37 +367,76 @@ export default function Home() {
         {activeTab === 'profil' && user && (
           <>
             <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Mon profil</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px' }}>
-              <div style={panel}>
-                <div style={{ padding: '24px', textAlign: 'center' }}>
-                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: goldBg, border: `2px solid ${gold}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 900, color: gold, margin: '0 auto 16px' }}>
-                    {(profile?.username || user.email)?.[0]?.toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: light, marginBottom: '4px' }}>{profile?.username || 'Joueur'}</div>
-                  <div style={{ fontSize: '12px', color: muted }}>{user.email}</div>
+            
+            {/* BANNIERE */}
+            <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
+              <div style={{ height: '140px', background: profile?.banner_url ? `url(${profile.banner_url}) center/cover` : `linear-gradient(135deg, #1a1400, #2d2000, #1a1400)`, position: 'relative', display: 'flex', alignItems: 'flex-end', padding: '16px' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `3px solid ${gold}`, overflow: 'hidden', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 900, color: gold, position: 'absolute', bottom: '-40px', left: '24px' }}>
+                  {profile?.avatar_url ? <img src={profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (profile?.username || user.email)?.[0]?.toUpperCase()}
                 </div>
-                <div style={{ borderTop: `1px solid ${border}`, padding: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
-                    <div style={{ fontSize: '12px', color: muted }}>Points</div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>
-                      {leaderboard.find(p => p.id === user.id)?.total_points || 0}
+              </div>
+              <div style={{ padding: '50px 24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: light }}>{profile?.username || 'Joueur'}</div>
+                  <div style={{ fontSize: '12px', color: muted, marginTop: '4px' }}>{user.email}</div>
+                  {profile?.discord_username && (
+                    <div style={{ fontSize: '12px', color: '#5865f2', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>Discord:</span><span style={{ fontWeight: 700 }}>{profile.discord_username}</span>
                     </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
+                  <div style={{ background: goldBg, border: `1px solid ${goldBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: gold }}>{leaderboard.find(p => p.id === user.id)?.total_points || 0}</div>
+                    <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Points</div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
-                    <div style={{ fontSize: '12px', color: muted }}>Victoires</div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>
-                      {leaderboard.find(p => p.id === user.id)?.total_wins || 0}
-                    </div>
+                  <div style={{ background: goldBg, border: `1px solid ${goldBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: gold }}>{leaderboard.find(p => p.id === user.id)?.total_wins || 0}</div>
+                    <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Victoires</div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                    <div style={{ fontSize: '12px', color: muted }}>D&eacute;faites</div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: muted }}>
-                      {leaderboard.find(p => p.id === user.id)?.total_losses || 0}
-                    </div>
+                  <div style={{ background: '#111', border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: muted }}>{leaderboard.find(p => p.id === user.id)?.total_losses || 0}</div>
+                    <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>D&eacute;faites</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px' }}>
+              
+              {/* PARAMETRES */}
+              <div style={panel}>
+                <div style={panelTitle}>Param&egrave;tres</div>
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Nom d&apos;utilisateur</div>
+                    <ProfileInput value={profile?.username || ''} userId={user.id} field="username" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>URL de la banni&egrave;re</div>
+                    <ProfileInput value={profile?.banner_url || ''} userId={user.id} field="banner_url" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} placeholder="https://..." />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>URL de l&apos;avatar</div>
+                    <ProfileInput value={profile?.avatar_url || ''} userId={user.id} field="avatar_url" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} placeholder="https://..." />
+                  </div>
+                  <div style={{ borderTop: `1px solid ${border}`, paddingTop: '12px' }}>
+                    <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Discord</div>
+                    {profile?.discord_username ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(88,101,242,0.1)', border: '1px solid rgba(88,101,242,0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                        <div style={{ fontSize: '13px', color: '#5865f2', fontWeight: 700 }}>{profile.discord_username}</div>
+                        <div style={{ fontSize: '10px', color: '#5865f2', background: 'rgba(88,101,242,0.2)', padding: '2px 8px', borderRadius: '4px' }}>Li&eacute;</div>
+                      </div>
+                    ) : (
+                      <button onClick={() => supabase.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } })} style={{ width: '100%', background: '#5865f2', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', letterSpacing: '1px' }}>
+                        Lier mon Discord
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* HISTORIQUE */}
               <div style={panel}>
                 <div style={panelTitle}>Historique des matchs</div>
                 {completedMatches.length === 0 ? (
