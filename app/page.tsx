@@ -107,14 +107,14 @@ export default function Home() {
       {showAuth && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: card, border: `1px solid ${gold}`, borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={120} height={50} style={{ objectFit: 'contain' }} />
-              <button onClick={() => setShowAuth(false)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
+              <button onClick={() => setShowAuth(false)} style={{ position: 'absolute', right: 0, top: 0, background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+              <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={140} height={60} style={{ objectFit: 'contain' }} />
             </div>
             <Auth
               supabaseClient={supabase}
               appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: gold, brandAccent: '#a07d1a' } } } }}
-              providers={[]}
+              providers={['discord']}
               localization={{
                 variables: {
                   sign_in: {
@@ -149,7 +149,7 @@ export default function Home() {
 
       {/* NAVBAR */}
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={80} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
+        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
         <div style={{ display: 'flex', gap: '4px' }}>
           {['ladders', 'tournois', 'classement'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
