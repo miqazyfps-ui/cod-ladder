@@ -149,7 +149,7 @@ export default function Home() {
 
       {/* NAVBAR */}
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={140} height={55} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
+        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={80} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
         <div style={{ display: 'flex', gap: '4px' }}>
           {['ladders', 'tournois', 'classement'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
