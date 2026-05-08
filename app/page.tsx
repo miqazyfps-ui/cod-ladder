@@ -12,6 +12,14 @@ const LADDERS = [
   { mode: '3v3', label: 'Trio', size: 3 },
   { mode: '4v4', label: 'Squad', size: 4 },
   { mode: '5v5', label: 'Team', size: 5 },
+  { mode: '6v6', label: 'Team+', size: 6 },
+];
+
+const LADDER_GROUPS = [
+  { id: 'cage', name: 'Match en cage', modes: ['1v1'], icon: '🎯', desc: 'Solo - Le meilleur gagne' },
+  { id: 'duo', name: 'Duo', modes: ['2v2'], icon: '👥', desc: '2 contre 2' },
+  { id: 'squad', name: 'Escouade', modes: ['3v3', '4v4'], icon: '💪', desc: '3v3 et 4v4 reunis' },
+  { id: 'team', name: 'Team', modes: ['5v5', '6v6'], icon: '🏆', desc: '5v5 et 6v6 reunis' },
 ];
 
 
@@ -155,6 +163,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('ladders');
   const [activeLadder, setActiveLadder] = useState('1v1');
   const [selectedGame, setSelectedGame] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminTab, setAdminTab] = useState('matchs');
   const [allUsers, setAllUsers] = useState<any[]>([]);
@@ -409,10 +419,37 @@ export default function Home() {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
 
-        {/* LADDERS */}
-        {activeTab === 'ladders' && !selectedGame && (
+        {/* LADDERS - ETAPE 1: Categorie */}
+        {activeTab === 'ladders' && !selectedCategory && (
           <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '20px' }}>S&eacute;lectionner un jeu</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '20px' }}>S&eacute;lectionner une cat&eacute;gorie</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', maxWidth: '600px' }}>
+              {[
+                { id: 'normal', label: 'Normal', desc: 'Parties classiques pour tous les niveaux', icon: '⚔️', color: gold },
+                { id: 'hardcore', label: 'Hardcore', desc: 'R&egrave;gles strictes pour les meilleurs', icon: '💀', color: '#ef4444' },
+              ].map(cat => (
+                <div key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+                  style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '28px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>{cat.icon}</div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: cat.color, marginBottom: '8px', letterSpacing: '2px', textTransform: 'uppercase' as const }}>{cat.label}</div>
+                  <div style={{ fontSize: '12px', color: muted }} dangerouslySetInnerHTML={{ __html: cat.desc }} />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* LADDERS - ETAPE 2: Jeu */}
+        {activeTab === 'ladders' && selectedCategory && !selectedGame && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setSelectedCategory('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: selectedCategory === 'hardcore' ? '#ef4444' : gold }}>
+                {selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} &mdash; S&eacute;lectionner un jeu
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
               <div onClick={() => setSelectedGame('bo7')} style={{ cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', border: `1px solid ${border}`, position: 'relative', height: '220px', transition: 'border-color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
@@ -422,8 +459,8 @@ export default function Home() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>Call of Duty</div>
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                    {['1v1', '2v2', '3v3', '4v4', '5v5'].map(m => (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' as const }}>
+                    {['1v1', '2v2', '3v3', '4v4', '5v5', '6v6'].map(m => (
                       <span key={m} style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(201,162,39,0.2)', color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
                     ))}
                   </div>
@@ -434,24 +471,51 @@ export default function Home() {
           </>
         )}
 
-        {activeTab === 'ladders' && selectedGame && (
+        {/* LADDERS - ETAPE 3: Groupe de mode */}
+        {activeTab === 'ladders' && selectedGame && !selectedGroup && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <button onClick={() => setSelectedGame('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                ← Retour
-              </button>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>
-                Black Ops 7 &mdash; Choisir un mode
-              </div>
+              <button onClick={() => setSelectedGame('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>Black Ops 7 &mdash; Choisir un mode</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '24px' }}>
-              {LADDERS.map(l => (
-                <div key={l.mode} onClick={() => setActiveLadder(l.mode)} style={ladderCard(activeLadder === l.mode)}>
-                  <div style={{ fontSize: '22px', fontWeight: 900, color: gold, marginBottom: '4px' }}>{l.mode}</div>
-                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' as const, color: muted }}>{l.label}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              {LADDER_GROUPS.map(g => (
+                <div key={g.id} onClick={() => { setSelectedGroup(g.id); setActiveLadder(g.modes[0]); }}
+                  style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '24px 20px', transition: 'border-color 0.2s' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>{g.icon}</div>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '6px' }}>{g.name}</div>
+                  <div style={{ fontSize: '12px', color: muted, marginBottom: '12px' }}>{g.desc}</div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
+                    {g.modes.map(m => (
+                      <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {/* LADDERS - ETAPE 4: Matchs et classement */}
+        {activeTab === 'ladders' && selectedGame && selectedGroup && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setSelectedGroup('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>
+                {LADDER_GROUPS.find(g => g.id === selectedGroup)?.name} &mdash; Black Ops 7
+              </div>
+            </div>
+
+            {/* Sous-modes si plusieurs */}
+            {(LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.length || 0) > 1 && (
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                {LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.map(m => (
+                  <button key={m} onClick={() => setActiveLadder(m)} style={{ background: activeLadder === m ? goldBg : card, border: `1px solid ${activeLadder === m ? gold : border}`, color: activeLadder === m ? gold : muted, padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{m}</button>
+                ))}
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
               <div>
