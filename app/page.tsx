@@ -4,36 +4,49 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
+import Image from 'next/image';
+
+const LADDERS = [
+  { mode: '1v1', label: 'Solo', size: 1 },
+  { mode: '2v2', label: 'Duo', size: 2 },
+  { mode: '3v3', label: 'Trio', size: 3 },
+  { mode: '4v4', label: 'Squad', size: 4 },
+  { mode: '5v5', label: 'Team', size: 5 },
+];
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('tournois');
+  const [activeTab, setActiveTab] = useState('ladders');
+  const [activeLadder, setActiveLadder] = useState('1v1');
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [tournaments, setTournaments] = useState<any[]>([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateTournoi, setShowCreateTournoi] = useState(false);
-  const [newTournoi, setNewTournoi] = useState({ name: '', game: 'valorant', format: 'single_elimination', max_teams: 16, team_size: 5, prize_pool: 0 });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) fetchProfile(session.user.id);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
       setShowAuth(false);
+      if (session?.user) fetchProfile(session.user.id);
     });
     fetchData();
     return () => subscription.unsubscribe();
   }, []);
 
+  async function fetchProfile(userId: string) {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    setProfile(data);
+  }
+
   async function fetchData() {
     setLoading(true);
-    const { data: t } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false });
-    const { data: m } = await supabase.from('matches').select('*, team_a:team_a_id(name), team_b:team_b_id(name)').order('scheduled_at', { ascending: true });
-    const { data: lb } = await supabase.from('leaderboard').select('*').limit(5);
-    setTournaments(t || []);
+    const { data: m } = await supabase.from('matches').select('*, team_a:team_a_id(name), team_b:team_b_id(name)').order('created_at', { ascending: false });
+    const { data: lb } = await supabase.from('leaderboard').select('*').limit(10);
     setMatches(m || []);
     setLeaderboard(lb || []);
     setLoading(false);
@@ -42,262 +55,321 @@ export default function Home() {
   async function handleSignOut() {
     await supabase.auth.signOut();
     setUser(null);
+    setProfile(null);
   }
 
-  async function handleCreateTournoi() {
-    if (!user) { setShowAuth(true); return; }
-    await supabase.from('tournaments').insert({ ...newTournoi, organizer_id: user.id, status: 'open', prize_currency: 'EUR' });
-    setShowCreateTournoi(false);
-    setNewTournoi({ name: '', game: 'valorant', format: 'single_elimination', max_teams: 16, team_size: 5, prize_pool: 0 });
-    fetchData();
-  }
+  const liveMatches = matches.filter(m => m.status === 'live');
+  const completedMatches = matches.filter(m => m.status === 'completed');
 
-  const statusColor = (s: string) => s === 'open' ? '#00e5a0' : s === 'ongoing' ? '#ef4444' : '#64748b';
-  const statusLabel = (s: string) => s === 'open' ? 'Inscriptions' : s === 'ongoing' ? 'En direct' : s === 'completed' ? 'Termine' : s;
-  const gameColors: any = { valorant: '#00e5a0', cs2: '#7c3aed', lol: '#f59e0b', rocket_league: '#ef4444' };
+  const gold = '#c9a227';
+  const goldBg = 'rgba(201,162,39,0.1)';
+  const goldBorder = 'rgba(201,162,39,0.3)';
+  const dark = '#0a0a0a';
+  const card = '#0f0f0f';
+  const border = '#1a1a1a';
+  const muted = '#555';
+  const light = '#e2e8f0';
+
+  const navBtn = (active: boolean) => ({
+    background: active ? goldBg : 'none',
+    color: active ? gold : '#666',
+    border: 'none', fontSize: '11px', fontWeight: 700,
+    letterSpacing: '1.5px', textTransform: 'uppercase' as const,
+    padding: '6px 14px', borderRadius: '6px', cursor: 'pointer'
+  });
+
+  const ladderCard = (active: boolean) => ({
+    background: active ? goldBg : card,
+    border: `1px solid ${active ? gold : border}`,
+    borderRadius: '8px', padding: '14px 10px',
+    textAlign: 'center' as const, cursor: 'pointer'
+  });
+
+  const panel = {
+    background: card, border: `1px solid ${border}`,
+    borderRadius: '8px', overflow: 'hidden', marginBottom: '12px'
+  };
+
+  const panelTitle = {
+    fontSize: '10px', fontWeight: 700, letterSpacing: '2px',
+    textTransform: 'uppercase' as const, color: muted,
+    padding: '10px 14px', borderBottom: `1px solid ${border}`
+  };
+
+  const lbRow = {
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '10px 14px', borderBottom: `1px solid #111`
+  };
 
   return (
-    <div style={{ background: '#0b0c0f', minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif', color: '#e2e8f0' }}>
+    <div style={{ background: dark, minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif', color: light }}>
 
       {showAuth && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: card, border: `1px solid ${gold}`, borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#00e5a0' }}>COD GG</div>
-              <button onClick={() => setShowAuth(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>x</button>
+              <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={120} height={50} style={{ objectFit: 'contain' }} />
+              <button onClick={() => setShowAuth(false)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
             </div>
             <Auth
               supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: '#00e5a0', brandAccent: '#00c484' } } } }}
+              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: gold, brandAccent: '#a07d1a' } } } }}
               providers={[]}
             />
           </div>
         </div>
       )}
 
-      {showCreateTournoi && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '16px', padding: '32px', width: '480px', maxWidth: '90vw' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 800, color: '#e2e8f0' }}>Creer un tournoi</div>
-              <button onClick={() => setShowCreateTournoi(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>x</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Nom du tournoi</div>
-                <input value={newTournoi.name} onChange={e => setNewTournoi({ ...newTournoi, name: e.target.value })} placeholder="Ex: Spring Championship 2026" style={{ width: '100%', background: '#0b0c0f', border: '1px solid #1c1f2e', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Jeu</div>
-                <select value={newTournoi.game} onChange={e => setNewTournoi({ ...newTournoi, game: e.target.value })} style={{ width: '100%', background: '#0b0c0f', border: '1px solid #1c1f2e', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px' }}>
-                  <option value="valorant">Valorant</option>
-                  <option value="cs2">CS2</option>
-                  <option value="lol">League of Legends</option>
-                  <option value="rocket_league">Rocket League</option>
-                </select>
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Format</div>
-                <select value={newTournoi.format} onChange={e => setNewTournoi({ ...newTournoi, format: e.target.value })} style={{ width: '100%', background: '#0b0c0f', border: '1px solid #1c1f2e', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px' }}>
-                  <option value="single_elimination">Single Elimination</option>
-                  <option value="double_elimination">Double Elimination</option>
-                  <option value="round_robin">Round Robin</option>
-                  <option value="swiss">Swiss</option>
-                </select>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Max equipes</div>
-                  <input type="number" value={newTournoi.max_teams} onChange={e => setNewTournoi({ ...newTournoi, max_teams: parseInt(e.target.value) })} style={{ width: '100%', background: '#0b0c0f', border: '1px solid #1c1f2e', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Joueurs/equipe</div>
-                  <input type="number" value={newTournoi.team_size} onChange={e => setNewTournoi({ ...newTournoi, team_size: parseInt(e.target.value) })} style={{ width: '100%', background: '#0b0c0f', border: '1px solid #1c1f2e', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Prize pool</div>
-                  <input type="number" value={newTournoi.prize_pool} onChange={e => setNewTournoi({ ...newTournoi, prize_pool: parseInt(e.target.value) })} style={{ width: '100%', background: '#0b0c0f', border: '1px solid #1c1f2e', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px' }} />
-                </div>
-              </div>
-              <button onClick={handleCreateTournoi} style={{ background: '#00e5a0', color: '#0b0c0f', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', marginTop: '8px' }}>
-                Creer le tournoi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <nav style={{ background: '#0f1117', borderBottom: '1px solid #1c1f2e', padding: '0 32px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '3px', color: '#00e5a0' }}>COD GG</div>
+      {/* NAVBAR */}
+      <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={140} height={55} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
         <div style={{ display: 'flex', gap: '4px' }}>
-          {['tournois', 'calendrier', 'classement'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: activeTab === tab ? 'rgba(0,229,160,0.1)' : 'transparent', color: activeTab === tab ? '#00e5a0' : '#64748b', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer' }}>{tab}</button>
+          {['ladders', 'tournois', 'classement'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
+          {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {user ? (
             <>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>{user.email}</div>
-              <button onClick={handleSignOut} style={{ background: 'transparent', color: '#64748b', border: '1px solid #1c1f2e', padding: '7px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Deconnexion</button>
+              <div style={{ fontSize: '12px', color: muted }}>{profile?.username || user.email}</div>
+              <button onClick={handleSignOut} style={{ background: 'transparent', color: muted, border: `1px solid ${border}`, padding: '7px 14px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                Deconnexion
+              </button>
             </>
           ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background: '#5865f2', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Se connecter</button>
+            <button onClick={() => setShowAuth(true)} style={{ background: gold, color: dark, border: 'none', fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' as const, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}>
+              Se connecter
+            </button>
           )}
         </div>
       </nav>
 
-      <div style={{ textAlign: 'center', padding: '48px 24px 32px', borderBottom: '1px solid #1c1f2e' }}>
-        <div style={{ display: 'inline-block', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: '#00e5a0', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', padding: '4px 14px', borderRadius: '20px', marginBottom: '16px' }}>PLATEFORME ESPORT</div>
-        <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#f1f5f9', marginBottom: '8px' }}>Rejoins la <span style={{ color: '#00e5a0' }}>competition</span></h1>
-        <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '14px' }}>Tournois, brackets, classements tout en un seul endroit.</p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button onClick={() => { if (!user) { setShowAuth(true); } else { setShowCreateTournoi(true); } }} style={{ background: '#00e5a0', color: '#0b0c0f', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>Creer un tournoi</button>
-          <button onClick={() => setActiveTab('tournois')} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #1c1f2e', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>Voir les tournois</button>
+      {/* HERO */}
+      <div style={{ background: dark, padding: '32px 24px 24px', textAlign: 'center', borderBottom: `1px solid ${border}` }}>
+        <div style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', color: gold, background: goldBg, border: `1px solid ${goldBorder}`, padding: '4px 14px', borderRadius: '20px', marginBottom: '14px' }}>
+          Call of Duty Black Ops 7
+        </div>
+        <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', marginBottom: '6px' }}>
+          Domine la <span style={{ color: gold }}>comp&eacute;tition</span>
+        </h1>
+        <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>Ladders 1v1 &mdash; 5v5 &middot; Classements en temps r&eacute;el</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button onClick={() => setActiveTab('ladders')} style={{ background: gold, color: dark, border: 'none', padding: '10px 22px', borderRadius: '6px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+            Rejoindre un ladder
+          </button>
+          <button onClick={() => setActiveTab('classement')} style={{ background: 'transparent', color: '#888', border: `1px solid ${border}`, padding: '10px 22px', borderRadius: '6px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+            Voir le classement
+          </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: '#0f1117', borderBottom: '1px solid #1c1f2e' }}>
-        {[[tournaments.length.toString(), 'Tournois'], [matches.filter(m => m.status === 'live').length.toString(), 'En direct'], [tournaments.filter(m => m.status === 'open').length.toString(), 'Inscriptions ouvertes'], [leaderboard.length.toString(), 'Joueurs classes']].map(([val, lbl]) => (
-          <div key={lbl} style={{ padding: '16px', textAlign: 'center', borderRight: '1px solid #1c1f2e' }}>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: '#00e5a0' }}>{val}</div>
-            <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>{lbl}</div>
-          </div>
-        ))}
-      </div>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
-        <div>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>Chargement...</div>
-          ) : (
-            <>
-              {activeTab === 'tournois' && (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#94a3b8' }}>Tournois ({tournaments.length})</div>
-                    <button onClick={() => { if (!user) { setShowAuth(true); } else { setShowCreateTournoi(true); } }} style={{ background: '#00e5a0', color: '#0b0c0f', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>+ Creer</button>
-                  </div>
-                  {tournaments.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', background: '#0f1117', borderRadius: '12px', border: '1px solid #1c1f2e' }}>
-                      <div style={{ fontSize: '14px', marginBottom: '12px' }}>Aucun tournoi pour l instant</div>
-                      <button onClick={() => { if (!user) { setShowAuth(true); } else { setShowCreateTournoi(true); } }} style={{ background: '#00e5a0', color: '#0b0c0f', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>Creer le premier tournoi</button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {tournaments.map(t => (
-                        <div key={t.id} style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}>
-                          <div style={{ width: '4px', borderRadius: '2px', alignSelf: 'stretch', background: gameColors[t.game] || '#64748b', flexShrink: 0 }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#64748b', marginBottom: '4px' }}>{t.game}</div>
-                            <div style={{ fontSize: '15px', fontWeight: 700, color: '#e2e8f0', marginBottom: '8px' }}>{t.name}</div>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
-                              <span>{t.format?.replace(/_/g, ' ')}</span>
-                              <span>{t.team_size}v{t.team_size}</span>
-                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: statusColor(t.status) + '22', color: statusColor(t.status) }}>{statusLabel(t.status)}</span>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '16px', fontWeight: 800, color: '#f59e0b' }}>{t.prize_pool} euro</div>
-                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{t.max_teams} equipes max</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-              {activeTab === 'calendrier' && (
-                <>
-                  <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px' }}>Calendrier des matchs</div>
-                  {matches.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', background: '#0f1117', borderRadius: '12px', border: '1px solid #1c1f2e' }}>Aucun match planifie pour l instant</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {matches.map((m, i) => (
-                        <div key={i} style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ fontSize: '12px', color: m.status === 'live' ? '#ef4444' : '#64748b', minWidth: '90px' }}>{m.status === 'live' ? 'En direct' : m.scheduled_at ? new Date(m.scheduled_at).toLocaleDateString('fr-FR') : 'A planifier'}</div>
-                          <div style={{ flex: 1, display: 'flex', gap: '10px', alignItems: 'center', fontWeight: 600, fontSize: '14px' }}>
-                            <span>{m.team_a?.name || 'TBD'}</span>
-                            <span style={{ color: '#64748b', fontSize: '12px' }}>VS</span>
-                            <span>{m.team_b?.name || 'TBD'}</span>
-                          </div>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#a78bfa' }}>{m.score_a} - {m.score_b}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-              {activeTab === 'classement' && (
-                <>
-                  <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px' }}>Classement general</div>
-                  {leaderboard.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', background: '#0f1117', borderRadius: '12px', border: '1px solid #1c1f2e' }}>Aucun joueur classe pour l instant</div>
-                  ) : (
-                    <div style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '12px', overflow: 'hidden' }}>
-                      {leaderboard.map((p, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: i < leaderboard.length - 1 ? '1px solid #0b0c0f' : 'none' }}>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#ea580c' : '#64748b', width: '20px' }}>{i + 1}</div>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(0,229,160,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px', color: '#00e5a0' }}>{p.username?.[0]?.toUpperCase()}</div>
-                          <div style={{ flex: 1, fontWeight: 600, fontSize: '14px' }}>{p.username}</div>
-                          <div style={{ fontSize: '12px', color: '#00e5a0' }}>{p.total_wins || 0} V</div>
-                          <div style={{ fontSize: '14px', fontWeight: 700, color: '#f59e0b' }}>{p.total_points || 0} pts</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#64748b', padding: '12px 16px', borderBottom: '1px solid #1c1f2e' }}>Top classement</div>
-            {leaderboard.length === 0 ? (
-              <div style={{ padding: '20px', fontSize: '13px', color: '#64748b', textAlign: 'center' }}>Aucun joueur encore</div>
-            ) : leaderboard.slice(0, 3).map((p, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderBottom: '1px solid #0b0c0f' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : '#ea580c', width: '16px' }}>{i + 1}</div>
-                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(0,229,160,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#00e5a0' }}>{p.username?.[0]?.toUpperCase()}</div>
-                <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{p.username}</div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b' }}>{p.total_points || 0}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#64748b', padding: '12px 16px', borderBottom: '1px solid #1c1f2e', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '6px', height: '6px', background: '#ef4444', borderRadius: '50%', display: 'inline-block' }} />Match en direct
+        {/* LADDERS */}
+        {activeTab === 'ladders' && (
+          <>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Choisir un mode</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '24px' }}>
+              {LADDERS.map(l => (
+                <div key={l.mode} onClick={() => setActiveLadder(l.mode)} style={ladderCard(activeLadder === l.mode)}>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: gold, marginBottom: '4px' }}>{l.mode}</div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' as const, color: muted }}>{l.label}</div>
+                </div>
+              ))}
             </div>
-            {matches.filter(m => m.status === 'live').length === 0 ? (
-              <div style={{ padding: '20px', fontSize: '13px', color: '#64748b', textAlign: 'center' }}>Aucun match en direct</div>
-            ) : matches.filter(m => m.status === 'live').slice(0, 1).map((m, i) => (
-              <div key={i} style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700 }}>{m.team_a?.name || 'TBD'}</div>
-                    <div style={{ fontSize: '28px', fontWeight: 900, color: '#00e5a0', marginTop: '4px' }}>{m.score_a}</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>
+                  Matchs en cours &mdash; {activeLadder}
+                </div>
+                {loading ? (
+                  <div style={{ color: muted, padding: '40px', textAlign: 'center' }}>Chargement...</div>
+                ) : liveMatches.length === 0 ? (
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', padding: '40px', textAlign: 'center', color: muted }}>
+                    <div style={{ fontSize: '14px', marginBottom: '8px' }}>Aucun match en cours</div>
+                    <div style={{ fontSize: '12px' }}>Rejoins le ladder pour d&eacute;fier un adversaire</div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>VS</div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700 }}>{m.team_b?.name || 'TBD'}</div>
-                    <div style={{ fontSize: '28px', fontWeight: 900, marginTop: '4px' }}>{m.score_b}</div>
+                ) : liveMatches.map((m, i) => (
+                  <div key={i} style={{ background: card, border: `1px solid ${goldBorder}`, borderRadius: '8px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: gold, display: 'flex', alignItems: 'center', gap: '4px', minWidth: '50px' }}>
+                      <div style={{ width: '6px', height: '6px', background: gold, borderRadius: '50%' }} />LIVE
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name || 'TBD'}</div>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: gold }}>{m.score_a}</div>
+                      <div style={{ fontSize: '11px', color: '#444', fontWeight: 700 }}>—</div>
+                      <div style={{ fontSize: '15px', fontWeight: 900 }}>{m.score_b}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700 }}>{m.team_b?.name || 'TBD'}</div>
+                    </div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', background: goldBg, color: gold, padding: '3px 8px', borderRadius: '4px' }}>{activeLadder}</div>
+                  </div>
+                ))}
+
+                {completedMatches.length > 0 && (
+                  <>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, margin: '20px 0 14px' }}>
+                      Historique des matchs
+                    </div>
+                    {completedMatches.slice(0, 5).map((m, i) => (
+                      <div key={i} style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '10px', color: muted, minWidth: '60px' }}>
+                          {m.ended_at ? new Date(m.ended_at).toLocaleDateString('fr-FR') : 'Termin&eacute;'}
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_a_id ? gold : light }}>{m.team_a?.name || 'TBD'}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_a_id ? gold : light }}>{m.score_a}</div>
+                          <div style={{ fontSize: '11px', color: '#444' }}>—</div>
+                          <div style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_b_id ? gold : light }}>{m.score_b}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_b_id ? gold : light }}>{m.team_b?.name || 'TBD'}</div>
+                        </div>
+                        <div style={{ fontSize: '10px', color: muted }}>Termin&eacute;</div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              <div>
+                <div style={panel}>
+                  <div style={panelTitle}>Top {activeLadder}</div>
+                  {leaderboard.length === 0 ? (
+                    <div style={{ padding: '20px', fontSize: '12px', color: muted, textAlign: 'center' }}>Aucun joueur encore</div>
+                  ) : leaderboard.slice(0, 5).map((p, i) => (
+                    <div key={i} style={lbRow}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: i === 0 ? gold : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : muted, width: '18px', textAlign: 'center' }}>{i + 1}</div>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: gold }}>{p.username?.[0]?.toUpperCase()}</div>
+                      <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{p.username}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{p.total_points || 0}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={panel}>
+                  <div style={panelTitle}>Stats</div>
+                  <div style={lbRow}>
+                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>Matchs jou&eacute;s</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{matches.length}</div>
+                  </div>
+                  <div style={lbRow}>
+                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>En direct</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{liveMatches.length}</div>
+                  </div>
+                  <div style={lbRow}>
+                    <div style={{ flex: 1, fontSize: '12px', color: muted }}>Joueurs class&eacute;s</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{leaderboard.length}</div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {user && (
-            <div style={{ background: '#0f1117', border: '1px solid #1c1f2e', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#64748b', marginBottom: '12px' }}>Mon profil</div>
-              <div style={{ fontSize: '13px', color: '#e2e8f0', marginBottom: '4px' }}>{user.email}</div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>Connecte</div>
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* TOURNOIS */}
+        {activeTab === 'tournois' && (
+          <div style={{ textAlign: 'center', padding: '80px 24px', color: muted }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏆</div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: gold, marginBottom: '8px', letterSpacing: '3px', textTransform: 'uppercase' as const }}>
+              &Agrave; venir
+            </div>
+            <div style={{ fontSize: '14px', color: muted }}>Les tournois arrivent bient&ocirc;t. Reste connect&eacute;.</div>
+          </div>
+        )}
+
+        {/* CLASSEMENT */}
+        {activeTab === 'classement' && (
+          <>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Classement g&eacute;n&eacute;ral</div>
+            {loading ? (
+              <div style={{ color: muted, padding: '40px', textAlign: 'center' }}>Chargement...</div>
+            ) : leaderboard.length === 0 ? (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', padding: '60px', textAlign: 'center', color: muted }}>
+                Aucun joueur class&eacute; pour l&apos;instant
+              </div>
+            ) : (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 80px 80px', padding: '10px 16px', fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' as const, color: muted, borderBottom: `1px solid ${border}` }}>
+                  <div>#</div><div>Joueur</div><div style={{ textAlign: 'center' }}>V</div><div style={{ textAlign: 'center' }}>D</div><div style={{ textAlign: 'center' }}>Pts</div>
+                </div>
+                {leaderboard.map((p, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 80px 80px', padding: '12px 16px', borderBottom: `1px solid #111`, alignItems: 'center' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: i === 0 ? gold : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : muted }}>{i + 1}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '30px', height: '30px', borderRadius: '6px', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: gold }}>{p.username?.[0]?.toUpperCase()}</div>
+                      <span style={{ fontSize: '14px', fontWeight: 600 }}>{p.username}</span>
+                    </div>
+                    <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: 700, color: gold }}>{p.total_wins || 0}</div>
+                    <div style={{ textAlign: 'center', fontSize: '13px', color: muted }}>{p.total_losses || 0}</div>
+                    <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 700, color: gold }}>{p.total_points || 0}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* PROFIL */}
+        {activeTab === 'profil' && user && (
+          <>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Mon profil</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px' }}>
+              <div style={panel}>
+                <div style={{ padding: '24px', textAlign: 'center' }}>
+                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: goldBg, border: `2px solid ${gold}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 900, color: gold, margin: '0 auto 16px' }}>
+                    {(profile?.username || user.email)?.[0]?.toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: light, marginBottom: '4px' }}>{profile?.username || 'Joueur'}</div>
+                  <div style={{ fontSize: '12px', color: muted }}>{user.email}</div>
+                </div>
+                <div style={{ borderTop: `1px solid ${border}`, padding: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
+                    <div style={{ fontSize: '12px', color: muted }}>Points</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>
+                      {leaderboard.find(p => p.id === user.id)?.total_points || 0}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
+                    <div style={{ fontSize: '12px', color: muted }}>Victoires</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>
+                      {leaderboard.find(p => p.id === user.id)?.total_wins || 0}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                    <div style={{ fontSize: '12px', color: muted }}>D&eacute;faites</div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: muted }}>
+                      {leaderboard.find(p => p.id === user.id)?.total_losses || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={panel}>
+                <div style={panelTitle}>Historique des matchs</div>
+                {completedMatches.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: muted, fontSize: '13px' }}>
+                    Aucun match jou&eacute; pour l&apos;instant
+                  </div>
+                ) : completedMatches.slice(0, 10).map((m, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ fontSize: '11px', color: muted, minWidth: '80px' }}>
+                      {m.ended_at ? new Date(m.ended_at).toLocaleDateString('fr-FR') : '-'}
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_a_id ? gold : light }}>{m.team_a?.name || 'TBD'}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_a_id ? gold : light }}>{m.score_a}</span>
+                      <span style={{ color: '#444' }}>—</span>
+                      <span style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_b_id ? gold : light }}>{m.score_b}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_b_id ? gold : light }}>{m.team_b?.name || 'TBD'}</span>
+                    </div>
+                    <div style={{ fontSize: '10px', background: goldBg, color: gold, padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>Termin&eacute;</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
       </div>
     </div>
   );
