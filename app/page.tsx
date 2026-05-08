@@ -56,10 +56,17 @@ export default function Home() {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, session) => {
       setUser(session?.user ?? null);
       setShowAuth(false);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) {
+        const discordUsername = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+        const avatarUrl = session.user.user_metadata?.avatar_url;
+        if (discordUsername) {
+          await supabase.from('profiles').update({ discord_username: discordUsername, avatar_url: avatarUrl }).eq('id', session.user.id);
+        }
+        fetchProfile(session.user.id);
+      }
     });
     fetchData();
     return () => subscription.unsubscribe();
