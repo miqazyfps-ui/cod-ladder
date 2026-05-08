@@ -423,20 +423,21 @@ export default function Home() {
         {activeTab === 'ladders' && !selectedCategory && (
           <>
             <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '20px' }}>S&eacute;lectionner une cat&eacute;gorie</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', maxWidth: '600px' }}>
-              {[
-                { id: 'normal', label: 'Normal', desc: 'Parties classiques pour tous les niveaux', icon: '⚔️', color: gold },
-                { id: 'hardcore', label: 'Hardcore', desc: 'R&egrave;gles strictes pour les meilleurs', icon: '💀', color: '#ef4444' },
-              ].map(cat => (
-                <div key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                  style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '28px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
-                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>{cat.icon}</div>
-                  <div style={{ fontSize: '20px', fontWeight: 900, color: cat.color, marginBottom: '8px', letterSpacing: '2px', textTransform: 'uppercase' as const }}>{cat.label}</div>
-                  <div style={{ fontSize: '12px', color: muted }} dangerouslySetInnerHTML={{ __html: cat.desc }} />
-                </div>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '500px' }}>
+                {[
+                  { id: 'hardcore', label: 'Hardcore', icon: '💀', color: '#ef4444' },
+                  { id: 'normal', label: 'Normal', icon: '⚔️', color: gold },
+                ].map(cat => (
+                  <div key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+                    style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '40px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>{cat.icon}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: cat.color, letterSpacing: '2px', textTransform: 'uppercase' as const }}>{cat.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -478,22 +479,23 @@ export default function Home() {
               <button onClick={() => setSelectedGame('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
               <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>Black Ops 7 &mdash; Choisir un mode</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-              {LADDER_GROUPS.map(g => (
-                <div key={g.id} onClick={() => { setSelectedGroup(g.id); setActiveLadder(g.modes[0]); }}
-                  style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '24px 20px', transition: 'border-color 0.2s' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
-                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>{g.icon}</div>
-                  <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '6px' }}>{g.name}</div>
-                  <div style={{ fontSize: '12px', color: muted, marginBottom: '12px' }}>{g.desc}</div>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
-                    {g.modes.map(m => (
-                      <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
-                    ))}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '600px' }}>
+                {LADDER_GROUPS.map(g => (
+                  <div key={g.id} onClick={() => { setSelectedGroup(g.id); setActiveLadder(g.modes[0]); }}
+                    style={{ cursor: 'pointer', background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '32px 20px', textAlign: 'center', transition: 'border-color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                    <div style={{ fontSize: '36px', marginBottom: '12px' }}>{g.icon}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '12px' }}>{g.name}</div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
+                      {g.modes.map(m => (
+                        <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -508,14 +510,19 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Sous-modes si plusieurs */}
-            {(LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.length || 0) > 1 && (
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                {LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.map(m => (
-                  <button key={m} onClick={() => setActiveLadder(m)} style={{ background: activeLadder === m ? goldBg : card, border: `1px solid ${activeLadder === m ? gold : border}`, color: activeLadder === m ? gold : muted, padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{m}</button>
-                ))}
+            {/* Sous-modes + bouton rejoindre */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {(LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.length || 0) > 1 && 
+                  LADDER_GROUPS.find(g => g.id === selectedGroup)?.modes.map(m => (
+                    <button key={m} onClick={() => setActiveLadder(m)} style={{ background: activeLadder === m ? goldBg : card, border: `1px solid ${activeLadder === m ? gold : border}`, color: activeLadder === m ? gold : muted, padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{m}</button>
+                  ))
+                }
               </div>
-            )}
+              <button onClick={() => { if (!user) setShowAuth(true); }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
+                Rejoindre le ladder
+              </button>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
               <div>
