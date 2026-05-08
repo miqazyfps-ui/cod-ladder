@@ -160,7 +160,7 @@ function ImageUpload({ userId, bucket, field, label, onSave, gold, dark, border,
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('ladders');
+  const [activeTab, setActiveTab] = useState('jeux');
   const [activeLadder, setActiveLadder] = useState('1v1');
   const [selectedGame, setSelectedGame] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -374,9 +374,9 @@ export default function Home() {
 
       {/* NAVBAR */}
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
+        <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('jeux')} />
         <div style={{ display: 'flex', gap: '4px' }}>
-          {['ladders', 'tournois', 'classement'].map(tab => (
+          {['jeux', 'tournois', 'classement'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
@@ -408,7 +408,7 @@ export default function Home() {
         </h1>
         <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>Ladders 1v1 &mdash; 5v5 &middot; Classements en temps r&eacute;el</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button onClick={() => setActiveTab('ladders')} style={{ background: gold, color: dark, border: 'none', padding: '10px 22px', borderRadius: '6px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+          <button onClick={() => setActiveTab('jeux')} style={{ background: gold, color: dark, border: 'none', padding: '10px 22px', borderRadius: '6px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
             Rejoindre un ladder
           </button>
           <button onClick={() => setActiveTab('classement')} style={{ background: 'transparent', color: '#888', border: `1px solid ${border}`, padding: '10px 22px', borderRadius: '6px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
@@ -420,7 +420,7 @@ export default function Home() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
 
         {/* LADDERS - ETAPE 1: Categorie */}
-        {activeTab === 'ladders' && !selectedCategory && (
+        {activeTab === 'jeux' && !selectedCategory && (
           <>
             <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '20px' }}>S&eacute;lectionner une cat&eacute;gorie</div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -443,7 +443,7 @@ export default function Home() {
         )}
 
         {/* LADDERS - ETAPE 2: Jeu */}
-        {activeTab === 'ladders' && selectedCategory && !selectedGame && (
+        {activeTab === 'jeux' && selectedCategory && !selectedGame && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <button onClick={() => setSelectedCategory('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
@@ -468,12 +468,30 @@ export default function Home() {
                 </div>
                 <div style={{ position: 'absolute', top: '12px', right: '12px', background: gold, color: dark, fontSize: '10px', fontWeight: 800, padding: '4px 10px', borderRadius: '4px', letterSpacing: '1px' }}>ACTIF</div>
               </div>
+
+              {/* FC 26 */}
+              <div onClick={() => setSelectedGame('fc26')} style={{ cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', border: `1px solid ${border}`, position: 'relative', height: '220px', transition: 'border-color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                <img src="/images/fc26.jpg" alt="FC 26" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>EA Sports</div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>FC 26</div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' as const }}>
+                    {['1v1', '2v2', '3v3', '4v4', '5v5', '6v6'].map(m => (
+                      <span key={m} style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,255,136,0.2)', color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{m}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ position: 'absolute', top: '12px', right: '12px', background: gold, color: dark, fontSize: '10px', fontWeight: 800, padding: '4px 10px', borderRadius: '4px', letterSpacing: '1px' }}>ACTIF</div>
+              </div>
             </div>
           </>
         )}
 
         {/* LADDERS - ETAPE 3: Groupe de mode */}
-        {activeTab === 'ladders' && selectedGame && !selectedGroup && (
+        {activeTab === 'jeux' && selectedGame && !selectedGroup && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <button onClick={() => setSelectedGame('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
@@ -501,16 +519,16 @@ export default function Home() {
         )}
 
         {/* LADDERS - ETAPE 4: Matchs et classement */}
-        {activeTab === 'ladders' && selectedGame && selectedGroup && (
+        {activeTab === 'jeux' && selectedGame && selectedGroup && (
           <>
             {/* Bannière du jeu */}
             <div style={{ position: 'relative', height: '120px', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-              <img src={selectedGame === 'bo7' ? '/images/bo7.jpg' : ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+              <img src={selectedGame === 'bo7' ? '/images/bo7.jpg' : '/images/fc26.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%)' }} />
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: '#00ff88', textTransform: 'uppercase' as const, marginBottom: '4px' }}>Call of Duty</div>
-                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: '#00ff88', textTransform: 'uppercase' as const, marginBottom: '4px' }}>{selectedGame === 'bo7' ? 'Call of Duty' : 'EA Sports'}</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>{selectedGame === 'bo7' ? 'Black Ops 7' : 'FC 26'}</div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px', textTransform: 'uppercase' as const, letterSpacing: '2px' }}>{selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} · {LADDER_GROUPS.find(g => g.id === selectedGroup)?.name}</div>
                 </div>
                 <button onClick={() => setSelectedGroup('')} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
