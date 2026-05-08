@@ -286,9 +286,9 @@ export default function Home() {
   const liveMatches = matches.filter(m => m.status === 'live');
   const completedMatches = matches.filter(m => m.status === 'completed');
 
-  const gold = '#c9a227';
-  const goldBg = 'rgba(201,162,39,0.1)';
-  const goldBorder = 'rgba(201,162,39,0.3)';
+  const gold = '#00ff88';
+  const goldBg = 'rgba(0,255,136,0.1)';
+  const greenBorder = 'rgba(0,255,136,0.3)';
   const dark = '#0a0a0a';
   const card = '#0f0f0f';
   const border = '#1a1a1a';
@@ -334,11 +334,11 @@ export default function Home() {
           <div style={{ background: card, border: `1px solid ${gold}`, borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
               <button onClick={() => setShowAuth(false)} style={{ position: 'absolute', right: 0, top: 0, background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
-              <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={140} height={60} style={{ objectFit: 'contain' }} />
+              <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={140} height={60} style={{ objectFit: 'contain' }} />
             </div>
             <Auth
               supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: gold, brandAccent: '#a07d1a' } } } }}
+              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: '#00ff88', brandAccent: '#00cc6a' } } } }}
               providers={['discord']}
               localization={{
                 variables: {
@@ -374,7 +374,7 @@ export default function Home() {
 
       {/* NAVBAR */}
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
+        <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
         <div style={{ display: 'flex', gap: '4px' }}>
           {['ladders', 'tournois', 'classement'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
@@ -400,7 +400,7 @@ export default function Home() {
 
       {/* HERO */}
       <div style={{ background: dark, padding: '32px 24px 24px', textAlign: 'center', borderBottom: `1px solid ${border}` }}>
-        <div style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', color: gold, background: goldBg, border: `1px solid ${goldBorder}`, padding: '4px 14px', borderRadius: '20px', marginBottom: '14px' }}>
+        <div style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', color: gold, background: goldBg, border: `1px solid ${greenBorder}`, padding: '4px 14px', borderRadius: '20px', marginBottom: '14px' }}>
           Call of Duty Black Ops 7
         </div>
         <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', marginBottom: '6px' }}>
@@ -462,7 +462,7 @@ export default function Home() {
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
                   <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' as const }}>
                     {['1v1', '2v2', '3v3', '4v4', '5v5', '6v6'].map(m => (
-                      <span key={m} style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(201,162,39,0.2)', color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
+                      <span key={m} style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,255,136,0.2)', color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{m}</span>
                     ))}
                   </div>
                 </div>
@@ -490,7 +490,7 @@ export default function Home() {
                     <div style={{ fontSize: '18px', fontWeight: 900, color: gold, marginBottom: '12px' }}>{g.name}</div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
                       {g.modes.map(m => (
-                        <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
+                        <span key={m} style={{ fontSize: '11px', fontWeight: 700, background: goldBg, color: gold, padding: '4px 10px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{m}</span>
                       ))}
                     </div>
                   </div>
@@ -537,7 +537,7 @@ export default function Home() {
                     <div style={{ fontSize: '12px' }}>Rejoins le ladder pour d&eacute;fier un adversaire</div>
                   </div>
                 ) : liveMatches.map((m, i) => (
-                  <div key={i} style={{ background: card, border: `1px solid ${goldBorder}`, borderRadius: '8px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
+                  <div key={i} style={{ background: card, border: `1px solid ${greenBorder}`, borderRadius: '8px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
                     <div style={{ fontSize: '10px', fontWeight: 700, color: gold, display: 'flex', alignItems: 'center', gap: '4px', minWidth: '50px' }}>
                       <div style={{ width: '6px', height: '6px', background: gold, borderRadius: '50%' }} />LIVE
                     </div>
@@ -677,11 +677,11 @@ export default function Home() {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
-                  <div style={{ background: goldBg, border: `1px solid ${goldBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
+                  <div style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
                     <div style={{ fontSize: '20px', fontWeight: 900, color: gold }}>{leaderboard.find(p => p.id === user.id)?.total_points || 0}</div>
                     <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Points</div>
                   </div>
-                  <div style={{ background: goldBg, border: `1px solid ${goldBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
+                  <div style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
                     <div style={{ fontSize: '20px', fontWeight: 900, color: gold }}>{leaderboard.find(p => p.id === user.id)?.total_wins || 0}</div>
                     <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Victoires</div>
                   </div>
@@ -862,7 +862,7 @@ export default function Home() {
                         <button onClick={() => setSelectedPlayer(null)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
-                        <button onClick={() => toggleAdmin(selectedPlayer.id, selectedPlayer.is_admin)} style={{ background: selectedPlayer.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${selectedPlayer.is_admin ? 'rgba(239,68,68,0.3)' : goldBorder}`, color: selectedPlayer.is_admin ? '#ef4444' : gold, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                        <button onClick={() => toggleAdmin(selectedPlayer.id, selectedPlayer.is_admin)} style={{ background: selectedPlayer.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${selectedPlayer.is_admin ? 'rgba(239,68,68,0.3)' : greenBorder}`, color: selectedPlayer.is_admin ? '#ef4444' : gold, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                           {selectedPlayer.is_admin ? 'Retirer les droits admin' : 'Nommer admin'}
                         </button>
                         {selectedPlayer.is_banned ? (
