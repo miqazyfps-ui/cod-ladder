@@ -338,7 +338,7 @@ export default function Home() {
             </div>
             <Auth
               supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: '#00ff88', brandAccent: '#00cc6a' } } } }}
+              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: '#00ff88', brandAccent: '#00cc6a', inputBackground: '#1a1a1a', inputText: '#e2e8f0', inputPlaceholder: '#666', inputBorder: '#2a2a2a', inputBorderFocus: '#00ff88' } } } }}
               providers={['discord']}
               localization={{
                 variables: {
@@ -503,12 +503,20 @@ export default function Home() {
         {/* LADDERS - ETAPE 4: Matchs et classement */}
         {activeTab === 'ladders' && selectedGame && selectedGroup && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <button onClick={() => setSelectedGroup('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>
-                {LADDER_GROUPS.find(g => g.id === selectedGroup)?.name} &mdash; Black Ops 7
+            {/* Bannière du jeu */}
+            <div style={{ position: 'relative', height: '120px', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+              <img src={selectedGame === 'bo7' ? '/images/bo7.jpg' : ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', color: '#00ff88', textTransform: 'uppercase' as const, marginBottom: '4px' }}>Call of Duty</div>
+                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px', textTransform: 'uppercase' as const, letterSpacing: '2px' }}>{selectedCategory === 'hardcore' ? '💀 Hardcore' : '⚔️ Normal'} · {LADDER_GROUPS.find(g => g.id === selectedGroup)?.name}</div>
+                </div>
+                <button onClick={() => setSelectedGroup('')} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>← Retour</button>
               </div>
             </div>
+
 
             {/* Sous-modes + bouton rejoindre */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -519,8 +527,8 @@ export default function Home() {
                   ))
                 }
               </div>
-              <button onClick={() => { if (!user) setShowAuth(true); }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
-                Rejoindre le ladder
+              <button onClick={() => { if (!user) { setShowAuth(true); } else { alert('Fonctionnalite bientot disponible !'); } }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
+                Lancer un match
               </button>
             </div>
 
