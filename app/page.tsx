@@ -15,6 +15,80 @@ const LADDERS = [
 ];
 
 
+
+function AdminMatchForm({ onCreate, gold, dark, border, muted }: any) {
+  const [teamA, setTeamA] = useState('');
+  const [teamB, setTeamB] = useState('');
+  const [mode, setMode] = useState('1v1');
+  const [creating, setCreating] = useState(false);
+
+  async function handle() {
+    if (!teamA || !teamB) return;
+    setCreating(true);
+    await onCreate(teamA, teamB, mode);
+    setTeamA('');
+    setTeamB('');
+    setCreating(false);
+  }
+
+  return (
+    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '4px' }}>Equipe A</div>
+          <input value={teamA} onChange={e => setTeamA(e.target.value)} placeholder="Nom equipe A" style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '8px 12px', color: '#e2e8f0', fontSize: '13px' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '4px' }}>Equipe B</div>
+          <input value={teamB} onChange={e => setTeamB(e.target.value)} placeholder="Nom equipe B" style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '8px 12px', color: '#e2e8f0', fontSize: '13px' }} />
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: '11px', color: muted, marginBottom: '4px' }}>Mode</div>
+        <select value={mode} onChange={e => setMode(e.target.value)} style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '8px 12px', color: '#e2e8f0', fontSize: '13px' }}>
+          {['1v1','2v2','3v3','4v4','5v5'].map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+      </div>
+      <button onClick={handle} disabled={creating || !teamA || !teamB} style={{ background: gold, color: dark, border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
+        {creating ? 'Creation...' : 'Creer le match'}
+      </button>
+    </div>
+  );
+}
+
+function AdminScoreForm({ match, onUpdate, onDelete, gold, dark, border, muted }: any) {
+  const [scoreA, setScoreA] = useState(match.score_a || 0);
+  const [scoreB, setScoreB] = useState(match.score_b || 0);
+  const [saving, setSaving] = useState(false);
+
+  async function finish(winnerId: string) {
+    setSaving(true);
+    await onUpdate(match.id, scoreA, scoreB, winnerId);
+    setSaving(false);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <input type="number" value={scoreA} onChange={e => setScoreA(parseInt(e.target.value))} style={{ width: '60px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '6px 10px', color: gold, fontSize: '16px', fontWeight: 900, textAlign: 'center' as const }} />
+        <span style={{ color: muted }}>—</span>
+        <input type="number" value={scoreB} onChange={e => setScoreB(parseInt(e.target.value))} style={{ width: '60px', background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '6px 10px', color: gold, fontSize: '16px', fontWeight: 900, textAlign: 'center' as const }} />
+      </div>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
+        <button onClick={() => finish(match.team_a_id)} disabled={saving} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          Victoire A
+        </button>
+        <button onClick={() => finish(match.team_b_id)} disabled={saving} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          Victoire B
+        </button>
+        <button onClick={() => onDelete(match.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+          Supprimer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ProfileInput({ value, userId, field, label, onSave, gold, dark, border, muted, placeholder }: any) {
   const [val, setVal] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -80,6 +154,10 @@ function ImageUpload({ userId, bucket, field, label, onSave, gold, dark, border,
 export default function Home() {
   const [activeTab, setActiveTab] = useState('ladders');
   const [activeLadder, setActiveLadder] = useState('1v1');
+  const [selectedGame, setSelectedGame] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminTab, setAdminTab] = useState('matchs');
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -111,6 +189,39 @@ export default function Home() {
   async function fetchProfile(userId: string) {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     setProfile(data);
+    if (data?.is_admin) {
+      setIsAdmin(true);
+      fetchAllUsers();
+    }
+  }
+
+  async function fetchAllUsers() {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    setAllUsers(data || []);
+  }
+
+  async function createMatch(teamAName: string, teamBName: string, mode: string) {
+    const { data: teamA } = await supabase.from('teams').insert({ name: teamAName, tournament_id: '00000000-0000-0000-0000-000000000000', captain_id: (await supabase.auth.getUser()).data.user?.id }).select().single();
+    const { data: teamB } = await supabase.from('teams').insert({ name: teamBName, tournament_id: '00000000-0000-0000-0000-000000000000', captain_id: (await supabase.auth.getUser()).data.user?.id }).select().single();
+    if (teamA && teamB) {
+      await supabase.from('matches').insert({ team_a_id: teamA.id, team_b_id: teamB.id, round: 1, match_number: 1, status: 'live', tournament_id: '00000000-0000-0000-0000-000000000000' });
+      fetchData();
+    }
+  }
+
+  async function updateScore(matchId: string, scoreA: number, scoreB: number, winnerId: string) {
+    await supabase.from('matches').update({ score_a: scoreA, score_b: scoreB, winner_id: winnerId, status: 'completed', ended_at: new Date().toISOString() }).eq('id', matchId);
+    fetchData();
+  }
+
+  async function deleteMatch(matchId: string) {
+    await supabase.from('matches').delete().eq('id', matchId);
+    fetchData();
+  }
+
+  async function toggleAdmin(userId: string, currentVal: boolean) {
+    await supabase.from('profiles').update({ is_admin: !currentVal }).eq('id', userId);
+    fetchAllUsers();
   }
 
   async function fetchData() {
@@ -225,6 +336,7 @@ export default function Home() {
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
+          {isAdmin && <button onClick={() => setActiveTab('admin')} style={{...navBtn(activeTab === 'admin'), color: activeTab === 'admin' ? '#ef4444' : '#666', background: activeTab === 'admin' ? 'rgba(239,68,68,0.1)' : 'none'}}>Admin</button>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {user ? (
@@ -264,9 +376,40 @@ export default function Home() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
 
         {/* LADDERS */}
-        {activeTab === 'ladders' && (
+        {activeTab === 'ladders' && !selectedGame && (
           <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Choisir un mode</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '20px' }}>S&eacute;lectionner un jeu</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              <div onClick={() => setSelectedGame('bo7')} style={{ cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', border: `1px solid ${border}`, position: 'relative', height: '220px', transition: 'border-color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = gold)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = border)}>
+                <img src="/images/bo7.jpg" alt="Black Ops 7" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '4px' }}>Call of Duty</div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                    {['1v1', '2v2', '3v3', '4v4', '5v5'].map(m => (
+                      <span key={m} style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(201,162,39,0.2)', color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${goldBorder}` }}>{m}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ position: 'absolute', top: '12px', right: '12px', background: gold, color: dark, fontSize: '10px', fontWeight: 800, padding: '4px 10px', borderRadius: '4px', letterSpacing: '1px' }}>ACTIF</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'ladders' && selectedGame && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button onClick={() => setSelectedGame('')} style={{ background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                ← Retour
+              </button>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted }}>
+                Black Ops 7 &mdash; Choisir un mode
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '24px' }}>
               {LADDERS.map(l => (
                 <div key={l.mode} onClick={() => setActiveLadder(l.mode)} style={ladderCard(activeLadder === l.mode)}>
@@ -279,7 +422,7 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
               <div>
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>
-                  Matchs en cours &mdash; {activeLadder}
+                  Matchs en cours &mdash; {activeLadder} &mdash; Black Ops 7
                 </div>
                 {loading ? (
                   <div style={{ color: muted, padding: '40px', textAlign: 'center' }}>Chargement...</div>
@@ -505,6 +648,91 @@ export default function Home() {
                 ))}
               </div>
             </div>
+          </>
+        )}
+
+
+        {/* ADMIN */}
+        {activeTab === 'admin' && isAdmin && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: '#ef4444' }}>Panneau Admin</div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              {['matchs', 'joueurs'].map(t => (
+                <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {adminTab === 'matchs' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Cr&eacute;er un match</div>
+                  <AdminMatchForm onCreate={createMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                </div>
+
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Matchs en cours</div>
+                  {liveMatches.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '13px' }}>Aucun match en cours</div>
+                  ) : liveMatches.map((m, i) => (
+                    <div key={i} style={{ padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name}</span>
+                        <span style={{ color: muted }}>vs</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name}</span>
+                      </div>
+                      <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ ...panel, gridColumn: '1 / -1' }}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Historique complet</div>
+                  {completedMatches.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '13px' }}>Aucun match termin&eacute;</div>
+                  ) : completedMatches.map((m, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 16px', borderBottom: `1px solid #111` }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+                        <span style={{ fontWeight: 700, color: m.winner_id === m.team_a_id ? gold : light }}>{m.team_a?.name}</span>
+                        <span style={{ color: gold, fontWeight: 900 }}>{m.score_a}</span>
+                        <span style={{ color: muted }}>—</span>
+                        <span style={{ color: m.winner_id === m.team_b_id ? gold : '#888', fontWeight: 900 }}>{m.score_b}</span>
+                        <span style={{ fontWeight: 700, color: m.winner_id === m.team_b_id ? gold : light }}>{m.team_b?.name}</span>
+                      </div>
+                      <button onClick={() => deleteMatch(m.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                        Supprimer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'joueurs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Gestion des joueurs</div>
+                {allUsers.map((u, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: gold, overflow: 'hidden', flexShrink: 0 }}>
+                      {u.avatar_url ? <img src={u.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{u.username}</div>
+                      {u.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>Discord: {u.discord_username}</div>}
+                    </div>
+                    {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
+                    <button onClick={() => toggleAdmin(u.id, u.is_admin)} style={{ background: u.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${u.is_admin ? 'rgba(239,68,68,0.3)' : goldBorder}`, color: u.is_admin ? '#ef4444' : gold, padding: '5px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                      {u.is_admin ? 'Retirer admin' : 'Rendre admin'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
