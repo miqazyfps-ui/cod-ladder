@@ -115,6 +115,33 @@ export default function Home() {
               supabaseClient={supabase}
               appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: gold, brandAccent: '#a07d1a' } } } }}
               providers={[]}
+              localization={{
+                variables: {
+                  sign_in: {
+                    email_label: 'Adresse email',
+                    password_label: 'Mot de passe',
+                    button_label: 'Se connecter',
+                    link_text: 'Vous avez deja un compte ? Connectez-vous',
+                    email_input_placeholder: 'Votre adresse email',
+                    password_input_placeholder: 'Votre mot de passe',
+                  },
+                  sign_up: {
+                    email_label: 'Adresse email',
+                    password_label: 'Mot de passe',
+                    button_label: "S'inscrire",
+                    link_text: 'Pas encore de compte ? Inscrivez-vous',
+                    email_input_placeholder: 'Votre adresse email',
+                    password_input_placeholder: 'Choisissez un mot de passe',
+                    confirmation_text: 'Verifiez votre email pour confirmer votre inscription',
+                  },
+                  forgotten_password: {
+                    link_text: 'Mot de passe oublie ?',
+                    button_label: 'Envoyer le lien de reinitialisation',
+                    email_label: 'Adresse email',
+                    email_input_placeholder: 'Votre adresse email',
+                  },
+                },
+              }}
             />
           </div>
         </div>
@@ -122,7 +149,7 @@ export default function Home() {
 
       {/* NAVBAR */}
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={80} height={45} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
+        <Image src="/images/Logo_Png_CL.png" alt="COD Ladders" width={140} height={55} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('ladders')} />
         <div style={{ display: 'flex', gap: '4px' }}>
           {['ladders', 'tournois', 'classement'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
