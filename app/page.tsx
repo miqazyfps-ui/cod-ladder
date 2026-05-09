@@ -345,13 +345,28 @@ export default function Home() {
   }
 
   function getLevelBadge(level: number) {
-    if (level >= 400) return { label: 'LEGENDAIRE', icon: '👑', color: '#ff4444', bg: 'rgba(255,68,68,0.15)', border: 'rgba(255,68,68,0.4)', glow: '0 0 12px rgba(255,68,68,0.4)' };
-    if (level >= 300) return { label: 'MAITRE', icon: '🔥', color: '#ff8800', bg: 'rgba(255,136,0,0.15)', border: 'rgba(255,136,0,0.4)', glow: '0 0 12px rgba(255,136,0,0.4)' };
-    if (level >= 200) return { label: 'DIAMANT', icon: '💎', color: '#00ccff', bg: 'rgba(0,204,255,0.15)', border: 'rgba(0,204,255,0.4)', glow: '0 0 12px rgba(0,204,255,0.4)' };
-    if (level >= 100) return { label: 'PLATINE', icon: '⚡', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.4)', glow: '0 0 12px rgba(167,139,250,0.4)' };
-    if (level >= 50) return { label: 'OR', icon: '⭐', color: '#00ff88', bg: 'rgba(0,255,136,0.15)', border: 'rgba(0,255,136,0.4)', glow: '0 0 8px rgba(0,255,136,0.3)' };
-    if (level >= 20) return { label: 'ARGENT', icon: '🔰', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', glow: 'none' };
-    return { label: 'BRONZE', icon: '🛡️', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)', border: 'rgba(205,127,50,0.4)', glow: 'none' };
+    if (level >= 400) return { label: 'LEGENDAIRE', color: '#a855f7', secondColor: '#ffd700', bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.4)', glow: '0 0 16px rgba(168,85,247,0.5)' };
+    if (level >= 300) return { label: 'MAITRE', color: '#00ff88', secondColor: '#00cc66', bg: 'rgba(0,255,136,0.12)', border: 'rgba(0,255,136,0.4)', glow: '0 0 16px rgba(0,255,136,0.5)' };
+    if (level >= 200) return { label: 'DIAMANT', color: '#3b82f6', secondColor: '#bfdbfe', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.4)', glow: '0 0 14px rgba(59,130,246,0.5)' };
+    if (level >= 100) return { label: 'PLATINE', color: '#7dd3fc', secondColor: '#e0f2fe', bg: 'rgba(125,211,252,0.12)', border: 'rgba(125,211,252,0.4)', glow: '0 0 14px rgba(125,211,252,0.4)' };
+    if (level >= 50) return { label: 'OR', color: '#ffd700', secondColor: '#fff8a0', bg: 'rgba(255,215,0,0.12)', border: 'rgba(255,215,0,0.4)', glow: '0 0 12px rgba(255,215,0,0.4)' };
+    if (level >= 20) return { label: 'ARGENT', color: '#94a3b8', secondColor: '#e2e8f0', bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.35)', glow: 'none' };
+    return { label: 'BRONZE', color: '#cd7f32', secondColor: '#e8a050', bg: 'rgba(205,127,50,0.12)', border: 'rgba(205,127,50,0.35)', glow: 'none' };
+  }
+
+  function BadgeSVG({ level, size = 40 }: { level: number, size?: number }) {
+    const b = getLevelBadge(level);
+    const svgs: any = {
+      BRONZE: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#1c0e04" stroke="#cd7f32" stroke-width="3.5"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#120a04" stroke="#cd7f32" stroke-width="1.5"/><line x1="12" y1="38" x2="128" y2="38" stroke="#e8a050" stroke-width="1.5" opacity="0.5"/><line x1="12" y1="102" x2="128" y2="102" stroke="#7a4a1a" stroke-width="1.5" opacity="0.4"/><polygon points="70,30 84,54 70,78 56,54" fill="#cd7f32" opacity="0.9"/><polygon points="70,26 87,52 83,76 57,76 53,52" fill="none" stroke="#e8a050" stroke-width="2.5"/><line x1="70" y1="30" x2="84" y2="54" stroke="#f0b060" stroke-width="0.8" opacity="0.5"/><line x1="70" y1="30" x2="56" y2="54" stroke="#f0b060" stroke-width="0.8" opacity="0.5"/><circle cx="70" cy="6" r="5" fill="#e8a050"/><circle cx="128" cy="38" r="4" fill="#cd7f32"/><circle cx="12" cy="38" r="4" fill="#cd7f32"/><circle cx="70" cy="134" r="5" fill="#cd7f32"/><text x="70" y="112" text-anchor="middle" font-family="Impact" font-size="9" fill="#e8a050" letter-spacing="2">BRONZE</text></svg>\`,
+      ARGENT: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#0a0a12" stroke="#94a3b8" stroke-width="3.5"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#06060e" stroke="#94a3b8" stroke-width="1.5"/><line x1="12" y1="38" x2="128" y2="38" stroke="#e2e8f0" stroke-width="1.5" opacity="0.4"/><rect x="38" y="32" width="64" height="64" rx="6" fill="#0d0d18" stroke="#94a3b8" stroke-width="2"/><circle cx="70" cy="64" r="14" fill="#0a0a12" stroke="#e2e8f0" stroke-width="2"/><circle cx="70" cy="64" r="9" fill="#0a0a12" stroke="#94a3b8" stroke-width="1.5"/><circle cx="70" cy="64" r="5" fill="#94a3b8" opacity="0.9"/><circle cx="70" cy="64" r="2" fill="#f1f5f9"/><circle cx="70" cy="6" r="5" fill="#e2e8f0"/><circle cx="128" cy="38" r="4" fill="#94a3b8"/><circle cx="12" cy="38" r="4" fill="#94a3b8"/><text x="70" y="112" text-anchor="middle" font-family="Impact" font-size="9" fill="#e2e8f0" letter-spacing="2">ARGENT</text></svg>\`,
+      OR: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#1a1400" stroke="#ffd700" stroke-width="4"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#100e00" stroke="#ffd700" stroke-width="2"/><line x1="12" y1="38" x2="128" y2="38" stroke="#fff8a0" stroke-width="2" opacity="0.5"/><polygon points="70,28 74,42 88,42 77,51 81,66 70,57 59,66 63,51 52,42 66,42" fill="#ffd700"/><polygon points="70,32 73,43 84,43 75,50 78,61 70,55 62,61 65,50 56,43 67,43" fill="#1a1400"/><circle cx="70" cy="52" r="5" fill="#ffd700"/><circle cx="70" cy="52" r="2" fill="#fff8b0"/><circle cx="70" cy="6" r="6" fill="#fff8a0"/><circle cx="128" cy="38" r="5" fill="#ffd700"/><circle cx="12" cy="38" r="5" fill="#ffd700"/><text x="70" y="108" text-anchor="middle" font-family="Impact" font-size="13" fill="#fff8a0" letter-spacing="5">OR</text></svg>\`,
+      PLATINE: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#00050f" stroke="#7dd3fc" stroke-width="4"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#00020a" stroke="#7dd3fc" stroke-width="2"/><line x1="12" y1="38" x2="128" y2="38" stroke="#e0f2fe" stroke-width="2" opacity="0.5"/><circle cx="70" cy="64" r="26" fill="#00080f" stroke="#7dd3fc" stroke-width="2.5"/><circle cx="70" cy="64" r="20" fill="#000508" stroke="#bae6fd" stroke-width="1.5"/><polygon points="70,40 77,55 94,55 80,65 85,82 70,71 55,82 60,65 46,55 63,55" fill="#7dd3fc" opacity="0.9"/><polygon points="70,46 76,57 89,57 79,64 83,77 70,68 57,77 61,64 51,57 64,57" fill="#00080f"/><circle cx="70" cy="64" r="5" fill="#7dd3fc" opacity="0.85"/><circle cx="70" cy="64" r="2" fill="#e0f2fe"/><circle cx="70" cy="6" r="5" fill="#e0f2fe"/><text x="70" y="116" text-anchor="middle" font-family="Impact" font-size="9" fill="#e0f2fe" letter-spacing="1">PLATINE</text></svg>\`,
+      DIAMANT: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#000514" stroke="#3b82f6" stroke-width="4"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#00020a" stroke="#3b82f6" stroke-width="2"/><line x1="12" y1="38" x2="128" y2="38" stroke="#bfdbfe" stroke-width="2" opacity="0.5"/><polygon points="70,26 96,50 96,82 70,106 44,82 44,50" fill="#1e3a8a" opacity="0.3"/><polygon points="70,26 96,50 96,82 70,106 44,82 44,50" fill="none" stroke="#3b82f6" stroke-width="3"/><polygon points="70,34 88,54 88,78 70,98 52,78 52,54" fill="none" stroke="#93c5fd" stroke-width="2"/><line x1="70" y1="26" x2="70" y2="106" stroke="#3b82f6" stroke-width="1.5" opacity="0.5"/><line x1="44" y1="66" x2="96" y2="66" stroke="#3b82f6" stroke-width="1.5" opacity="0.5"/><circle cx="70" cy="66" r="7" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/><circle cx="70" cy="66" r="3" fill="#bfdbfe"/><circle cx="70" cy="6" r="6" fill="#bfdbfe"/><text x="70" y="122" text-anchor="middle" font-family="Impact" font-size="9" fill="#bfdbfe" letter-spacing="1">DIAMANT</text></svg>\`,
+      MAITRE: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#001a00" stroke="#00ff88" stroke-width="4"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#000f00" stroke="#00ff88" stroke-width="2"/><line x1="12" y1="38" x2="128" y2="38" stroke="#ccffdd" stroke-width="2" opacity="0.5"/><path d="M70,22 L76,34 L70,28 L64,34 Z" fill="#00ff88"/><path d="M64,34 L70,28 L76,34 L74,48 L70,56 L66,48 Z" fill="#00cc66"/><path d="M66,48 L70,56 L74,48 L78,62 L70,74 L62,62 Z" fill="#009944" opacity="0.95"/><path d="M62,62 L70,74 L78,62 L80,78 L70,88 L60,78 Z" fill="#006622" opacity="0.9"/><path d="M70,28 L70,88" stroke="#66ffaa" stroke-width="2.5" opacity="0.5"/><path d="M62,36 L70,32 L78,36" fill="none" stroke="#ccffdd" stroke-width="2" opacity="0.7"/><path d="M61,48 L70,44 L79,48" fill="none" stroke="#aaffcc" stroke-width="1.5" opacity="0.6"/><path d="M60,60 L70,56 L80,60" fill="none" stroke="#88ffbb" stroke-width="1.5" opacity="0.5"/><circle cx="70" cy="6" r="6" fill="#ccffdd"/><text x="70" y="114" text-anchor="middle" font-family="Impact" font-size="9" fill="#ccffdd" letter-spacing="2">MAITRE</text></svg>\`,
+      LEGENDAIRE: \`<svg viewBox="0 0 140 155" width="\${size}" height="\${size}"><polygon points="70,6 128,38 128,102 70,134 12,102 12,38" fill="#0d0014" stroke="#a855f7" stroke-width="4.5"/><polygon points="70,14 120,42 120,98 70,126 20,98 20,42" fill="#080008" stroke="#a855f7" stroke-width="2"/><line x1="12" y1="38" x2="128" y2="38" stroke="#ffd700" stroke-width="2" opacity="0.5"/><rect x="36" y="72" width="68" height="24" rx="4" fill="#2d0050" stroke="#a855f7" stroke-width="2"/><rect x="40" y="64" width="10" height="14" rx="2" fill="#2d0050" stroke="#a855f7" stroke-width="1.5"/><rect x="65" y="58" width="10" height="20" rx="2" fill="#2d0050" stroke="#ffd700" stroke-width="2"/><rect x="90" y="64" width="10" height="14" rx="2" fill="#2d0050" stroke="#a855f7" stroke-width="1.5"/><circle cx="45" cy="62" r="5" fill="#ffd700"/><circle cx="70" cy="56" r="6" fill="#ffd700"/><circle cx="95" cy="62" r="5" fill="#ffd700"/><polygon points="36,48 48,36 70,30 92,36 104,48 100,62 70,68 40,62" fill="none" stroke="#a855f7" stroke-width="2.5"/><polygon points="42,50 52,40 70,34 88,40 98,50 95,61 70,65 45,61" fill="none" stroke="#ffd700" stroke-width="1.5"/><circle cx="70" cy="49" r="9" fill="#0d0014" stroke="#a855f7" stroke-width="2.5"/><circle cx="70" cy="49" r="5" fill="#a855f7" opacity="0.9"/><circle cx="70" cy="49" r="2" fill="#ffd700"/><rect x="55" y="2" width="30" height="10" rx="2" fill="#0d0014" stroke="#ffd700" stroke-width="1.5"/><rect x="59" y="0" width="5" height="6" rx="1" fill="#ffd700"/><rect x="68" y="-1" width="5" height="7" rx="1" fill="#ffd700"/><rect x="77" y="0" width="5" height="6" rx="1" fill="#ffd700"/><circle cx="128" cy="38" r="5" fill="#ffd700"/><circle cx="12" cy="38" r="5" fill="#ffd700"/><text x="70" y="120" text-anchor="middle" font-family="Impact" font-size="8" fill="#ffd700" letter-spacing="0.5">LEGENDAIRE</text></svg>\`,
+    };
+    const svg = svgs[b.label] || svgs['BRONZE'];
+    return <span dangerouslySetInnerHTML={{ __html: svg }} />;
   }
   const goldBg = 'rgba(0,255,136,0.1)';
   const greenBorder = 'rgba(0,255,136,0.3)';
@@ -442,7 +457,7 @@ export default function Home() {
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('jeux')} />
         <div style={{ display: 'flex', gap: '4px' }}>
-          {['accueil', 'jeux', 'tournois', 'classement'].map(tab => (
+          {['accueil', 'jeux', 'tournois', 'classement', 'rangs'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
@@ -867,6 +882,35 @@ export default function Home() {
           </div>
         )}
 
+        {/* APERCU RANGS */}
+        {activeTab === 'rangs' && (
+          <>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, marginBottom: '20px' }}>Syst&egrave;me de rangs</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              {[
+                { min: 1, max: 19, label: 'BRONZE', color: '#cd7f32', desc: 'Débutant' },
+                { min: 20, max: 49, label: 'ARGENT', color: '#94a3b8', desc: 'Confirmé' },
+                { min: 50, max: 99, label: 'OR', color: '#ffd700', desc: 'Expérimenté' },
+                { min: 100, max: 199, label: 'PLATINE', color: '#7dd3fc', desc: 'Élite' },
+                { min: 200, max: 299, label: 'DIAMANT', color: '#3b82f6', desc: 'Maître' },
+                { min: 300, max: 399, label: 'MAITRE', color: '#00ff88', desc: 'Champion' },
+                { min: 400, max: 500, label: 'LEGENDAIRE', color: '#a855f7', desc: 'Légende' },
+              ].map((r, i) => (
+                <div key={i} style={{ background: card, border: `1px solid ${getLevelBadge(r.min).border}`, borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                    <BadgeSVG level={r.min} size={80} />
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: r.color, letterSpacing: '2px', marginBottom: '4px' }}>{r.label}</div>
+                  <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>{r.desc}</div>
+                  <div style={{ fontSize: '10px', color: r.color, background: getLevelBadge(r.min).bg, border: `1px solid ${getLevelBadge(r.min).border}`, padding: '4px 10px', borderRadius: '20px', display: 'inline-block' }}>
+                    LVL {r.min} &mdash; {r.max}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {/* CLASSEMENT */}
         {activeTab === 'classement' && (
           <>
@@ -915,9 +959,16 @@ export default function Home() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                     <div style={{ fontSize: '20px', fontWeight: 800, color: light }}>{profile?.username || 'Joueur'}</div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '6px', background: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).bg, color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color, border: `1px solid ${getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).border}`, boxShadow: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).glow, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '14px' }}>{getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).icon}</span>
-                      <span>LVL {getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)} &middot; {getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <BadgeSVG level={getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)} size={44} />
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color }}>
+                          LVL {getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)}
+                        </div>
+                        <div style={{ fontSize: '10px', color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color, opacity: 0.8 }}>
+                          {getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).label}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div style={{ fontSize: '12px', color: muted }}>{user.email}</div>
