@@ -367,6 +367,9 @@ export default function Home() {
     };
     return shapes[b.label] || shapes['BRONZE'];
   }
+  const gold = '#00ff88';
+  const goldBg = 'rgba(0,255,136,0.1)';
+
   const greenBorder = 'rgba(0,255,136,0.3)';
   const dark = '#0a0a0a';
   const card = '#0f0f0f';
