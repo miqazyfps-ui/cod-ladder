@@ -27,12 +27,18 @@ const LADDER_GROUPS = [
 function CreateTeamForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
   const [name, setName] = useState('');
   const [game, setGame] = useState('bo7');
-  const [mode, setMode] = useState('2v2');
+  const [mode, setMode] = useState('duo');
   const [creating, setCreating] = useState(false);
 
-  const modes: any = {
-    bo7: ['2v2', '3v3', '4v4', '5v5', '6v6'],
-    fc26: ['2v2'],
+  const modeGroups: any = {
+    bo7: [
+      { label: 'Duo', value: 'duo', modes: ['2v2'] },
+      { label: 'Escouade', value: 'squad', modes: ['3v3', '4v4'] },
+      { label: 'Team', value: 'team', modes: ['5v5', '6v6'] },
+    ],
+    fc26: [
+      { label: 'Coop', value: 'coop', modes: ['2v2'] },
+    ],
   };
 
   async function handle() {
@@ -57,18 +63,19 @@ function CreateTeamForm({ onSubmit, onCancel, gold, dark, border, muted, light }
           <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Jeu</div>
           <div style={{ display: 'flex', gap: '8px' }}>
             {[{ value: 'bo7', label: 'Black Ops 7' }, { value: 'fc26', label: 'FC 26' }].map(g => (
-              <button key={g.value} onClick={() => { setGame(g.value); setMode(modes[g.value][0]); }} style={{ flex: 1, background: game === g.value ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${game === g.value ? gold : border}`, color: game === g.value ? gold : muted, padding: '10px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+              <button key={g.value} onClick={() => { setGame(g.value); setMode(modeGroups[g.value][0].value); }} style={{ flex: 1, background: game === g.value ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${game === g.value ? gold : border}`, color: game === g.value ? gold : muted, padding: '10px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
                 {g.label}
               </button>
             ))}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Mode</div>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Format</div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
-            {modes[game].map((m: string) => (
-              <button key={m} onClick={() => setMode(m)} style={{ background: mode === m ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${mode === m ? gold : border}`, color: mode === m ? gold : muted, padding: '8px 16px', borderRadius: '6px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-                {m}
+            {modeGroups[game].map((g: any) => (
+              <button key={g.value} onClick={() => setMode(g.value)} style={{ background: mode === g.value ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${mode === g.value ? gold : border}`, color: mode === g.value ? gold : muted, padding: '8px 16px', borderRadius: '6px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+                <div>{g.label}</div>
+                <div style={{ fontSize: '10px', opacity: 0.7 }}>{g.modes.join(' & ')}</div>
               </button>
             ))}
           </div>
