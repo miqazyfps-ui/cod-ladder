@@ -91,20 +91,17 @@ function CreateMatchForm({ onSubmit, onCancel, gold, dark, border, muted, light 
       return slots;
     }
 
-    // Aujourd'hui : créneaux à partir de maintenant + 15min minimum
-    const minTime = new Date(now.getTime() + 15 * 60 * 1000);
-    const minH = minTime.getHours();
-    const minM = Math.ceil(minTime.getMinutes() / 15) * 15;
-    
+    // Aujourd'hui : créneaux à partir du prochain créneau de 15min non encore passé
+    const nowH = now.getHours();
+    const nowM = now.getMinutes();
+
     for (let h = 0; h < 24; h++) {
       for (let m = 0; m < 60; m += 15) {
-        // Vérifier si ce créneau est dans le futur
-        if (h < minH) continue;
-        if (h === minH && m < minM) continue;
-        if (minM >= 60 && h === minH) continue;
-        if (minM >= 60 && h <= minH) continue;
+        // Le créneau est passé si l'heure:minute est déjà dépassée
+        if (h < nowH) continue;
+        if (h === nowH && m <= nowM) continue;
         const hh = String(h).padStart(2, '0');
-        const mm = String(m < 60 ? m : 0).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
         slots.push({ value: hh + ':' + mm, label: hh + 'h' + mm });
       }
     }
