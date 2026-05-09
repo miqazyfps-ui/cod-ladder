@@ -51,6 +51,13 @@ function CreateMatchForm({ onSubmit, onCancel, gold, dark, border, muted, light 
   const [selectedSlot, setSelectedSlot] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const slots = getSlots(selectedDate);
+  
+  // Auto-sélectionner le créneau le plus proche au chargement
+  useEffect(() => {
+    if (slots.length > 0 && !selectedSlot) {
+      setSelectedSlot(slots[0].value);
+    }
+  }, [selectedDate]);
 
   async function handle() {
     if (!selectedSlot) { alert('Choisis un créneau horaire'); return; }
