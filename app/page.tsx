@@ -76,7 +76,7 @@ function CreateTeamForm({ onSubmit, onCancel, gold, dark, border, muted, light }
         <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
           <button onClick={onCancel} style={{ flex: 1, background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '12px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Annuler</button>
           <button onClick={handle} disabled={creating} style={{ flex: 2, background: gold, color: dark, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
-            {creating ? 'Création...' : 'Créer l'équipe'}
+            {creating ? 'Création...' : 'Créer mon équipe'}
           </button>
         </div>
       </div>
