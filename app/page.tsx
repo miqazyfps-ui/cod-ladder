@@ -29,18 +29,37 @@ function CreateMatchForm({ onSubmit, onCancel, gold, dark, border, muted, light 
   const todayStr = now.toISOString().split('T')[0];
   const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().split('T')[0];
 
-  // Générer les créneaux de 15 min à partir de maintenant + 30min
+  // Générer les créneaux de 15 min
   function getSlots(dateStr: string) {
     const slots = [];
     const isToday = dateStr === todayStr;
-    const startH = isToday ? now.getHours() : 0;
-    const startM = isToday ? Math.ceil((now.getMinutes() + 30) / 15) * 15 : 0;
-    for (let h = startH; h < 24; h++) {
-      const mStart = (h === startH) ? startM : 0;
-      for (let m = mStart; m < 60; m += 15) {
-        if (m >= 60) continue;
+    
+    if (!isToday) {
+      // Autre jour : tous les créneaux de 00h00 à 23h45
+      for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 15) {
+          const hh = String(h).padStart(2, '0');
+          const mm = String(m).padStart(2, '0');
+          slots.push({ value: hh + ':' + mm, label: hh + 'h' + mm });
+        }
+      }
+      return slots;
+    }
+
+    // Aujourd'hui : créneaux à partir de maintenant + 15min minimum
+    const minTime = new Date(now.getTime() + 15 * 60 * 1000);
+    const minH = minTime.getHours();
+    const minM = Math.ceil(minTime.getMinutes() / 15) * 15;
+    
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 15) {
+        // Vérifier si ce créneau est dans le futur
+        if (h < minH) continue;
+        if (h === minH && m < minM) continue;
+        if (minM >= 60 && h === minH) continue;
+        if (minM >= 60 && h <= minH) continue;
         const hh = String(h).padStart(2, '0');
-        const mm = String(m).padStart(2, '0');
+        const mm = String(m < 60 ? m : 0).padStart(2, '0');
         slots.push({ value: hh + ':' + mm, label: hh + 'h' + mm });
       }
     }
