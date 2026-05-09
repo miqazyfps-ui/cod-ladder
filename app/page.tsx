@@ -24,6 +24,89 @@ const LADDER_GROUPS = [
 
 
 
+function CreateTeamForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
+  const [name, setName] = useState('');
+  const [game, setGame] = useState('bo7');
+  const [mode, setMode] = useState('2v2');
+  const [creating, setCreating] = useState(false);
+
+  const modes: any = {
+    bo7: ['2v2', '3v3', '4v4', '5v5', '6v6'],
+    fc26: ['2v2'],
+  };
+
+  async function handle() {
+    if (!name.trim()) { alert('Donne un nom à ton équipe'); return; }
+    setCreating(true);
+    await onSubmit(name.trim(), game, mode);
+    setCreating(false);
+  }
+
+  return (
+    <div style={{ background: '#0f0f0f', border: `1px solid ${gold}`, borderRadius: '16px', padding: '28px', width: '400px', maxWidth: '95vw' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: light }}>Créer une équipe</div>
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
+        <div>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Nom de l&apos;équipe</div>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Les Destroyers" style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', color: light, fontSize: '14px' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Jeu</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[{ value: 'bo7', label: 'Black Ops 7' }, { value: 'fc26', label: 'FC 26' }].map(g => (
+              <button key={g.value} onClick={() => { setGame(g.value); setMode(modes[g.value][0]); }} style={{ flex: 1, background: game === g.value ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${game === g.value ? gold : border}`, color: game === g.value ? gold : muted, padding: '10px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Mode</div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
+            {modes[game].map((m: string) => (
+              <button key={m} onClick={() => setMode(m)} style={{ background: mode === m ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${mode === m ? gold : border}`, color: mode === m ? gold : muted, padding: '8px 16px', borderRadius: '6px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+          <button onClick={onCancel} style={{ flex: 1, background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '12px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={handle} disabled={creating} style={{ flex: 2, background: gold, color: dark, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
+            {creating ? 'Création...' : 'Créer l'équipe'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InvitePlayerForm({ teamId, onInvite, gold, dark, border, muted }: any) {
+  const [username, setUsername] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function handle(e: any) {
+    e.stopPropagation();
+    if (!username.trim()) return;
+    setSending(true);
+    await onInvite(teamId, username.trim());
+    setUsername('');
+    setSending(false);
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: '6px', flex: 1 }} onClick={e => e.stopPropagation()}>
+      <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Pseudo du joueur" style={{ flex: 1, background: dark, border: `1px solid ${border}`, borderRadius: '6px', padding: '8px 10px', color: '#e2e8f0', fontSize: '12px' }} />
+      <button onClick={handle} disabled={sending} style={{ background: gold, color: dark, border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+        {sending ? '...' : 'Inviter'}
+      </button>
+    </div>
+  );
+}
+
 function SubmitResultForm({ match, onSubmit, onCancel, gold, dark, border, muted, light }: any) {
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
@@ -358,6 +441,11 @@ export default function Home() {
   const [showBanMenu, setShowBanMenu] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
   const [showCreateMatch, setShowCreateMatch] = useState(false);
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [myTeams, setMyTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<any>(null);
+  const [teamInvites, setTeamInvites] = useState<any[]>([]);
+  const [allPlayers, setAllPlayers] = useState<any[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [chatRoom, setChatRoom] = useState('');
   const [chatMessages, setChatMessages] = useState<any[]>([]);
@@ -462,6 +550,50 @@ export default function Home() {
       setSelectedPlayer((prev: any) => prev ? {...prev, is_admin: newVal} : null);
       await fetchAllUsers();
     }
+  }
+
+  // ===== EQUIPES =====
+  async function createTeam(name: string, game: string, mode: string) {
+    if (!user) return;
+    const { data: team, error } = await supabase.from('teams').insert({
+      name, game, mode,
+      captain_id: user.id,
+      tournament_id: '00000000-0000-0000-0000-000000000000',
+    }).select().single();
+    if (error) { alert('Erreur: ' + error.message); return; }
+    if (team) {
+      await supabase.from('team_members').insert({ team_id: team.id, profile_id: user.id });
+      fetchData();
+      setShowCreateTeam(false);
+    }
+  }
+
+  async function invitePlayer(teamId: string, username: string) {
+    if (!user) return;
+    const { data: player } = await supabase.from('profiles').select('id').eq('username', username).single();
+    if (!player) { alert('Joueur introuvable'); return; }
+    const { error } = await supabase.from('team_invites').insert({
+      team_id: teamId,
+      inviter_id: user.id,
+      invitee_id: player.id,
+    });
+    if (error) { alert('Erreur: ' + error.message); return; }
+    alert('Invitation envoyée !');
+  }
+
+  async function respondInvite(inviteId: string, teamId: string, accept: boolean) {
+    if (!user) return;
+    await supabase.from('team_invites').update({ status: accept ? 'accepted' : 'declined' }).eq('id', inviteId);
+    if (accept) {
+      await supabase.from('team_members').insert({ team_id: teamId, profile_id: user.id });
+    }
+    fetchData();
+  }
+
+  async function leaveTeam(teamId: string) {
+    if (!user) return;
+    await supabase.from('team_members').delete().eq('team_id', teamId).eq('profile_id', user.id);
+    fetchData();
   }
 
   // ===== CHAT =====
@@ -659,6 +791,14 @@ export default function Home() {
     setLeaderboard(lb || []);
     setMatchRequests(mr || []);
     if (user) {
+      const { data: teams } = await supabase.from('teams').select('*, members:team_members(*, profile:profile_id(username, avatar_url))').eq('captain_id', user.id);
+      const { data: memberTeams } = await supabase.from('team_members').select('*, team:team_id(*, members:team_members(*, profile:profile_id(username, avatar_url)))').eq('profile_id', user.id);
+      const allMyTeams = [...(teams || []), ...((memberTeams || []).map((m: any) => m.team).filter((t: any) => t && t.captain_id !== user.id))];
+      setMyTeams(allMyTeams);
+      const { data: invites } = await supabase.from('team_invites').select('*, team:team_id(name), inviter:inviter_id(username)').eq('invitee_id', user.id).eq('status', 'pending');
+      setTeamInvites(invites || []);
+    }
+    if (user) {
       setMyMatches((mr || []).filter((r: any) => r.requester_id === user.id || r.opponent_id === user.id));
     }
     setLoading(false);
@@ -852,6 +992,13 @@ export default function Home() {
         </div>
       )}
 
+      {/* MODAL CREER EQUIPE */}
+      {showCreateTeam && user && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CreateTeamForm onSubmit={createTeam} onCancel={() => setShowCreateTeam(false)} gold={gold} dark={dark} border={border} muted={muted} light={light} />
+        </div>
+      )}
+
       {/* MODAL CREER MATCH */}
       {showCreateMatch && user && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -872,7 +1019,7 @@ export default function Home() {
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('jeux')} />
         <div style={{ display: 'flex', gap: '4px' }}>
-          {['accueil', 'jeux', 'tournois', 'classement', 'rangs'].map(tab => (
+          {['accueil', 'jeux', 'equipes', 'tournois', 'classement', 'rangs'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
@@ -1392,6 +1539,128 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </>
+        )}
+
+        {/* EQUIPES */}
+        {activeTab === 'equipes' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold }}>Mes &eacute;quipes</div>
+              {user && (
+                <button onClick={() => setShowCreateTeam(true)} style={{ background: gold, color: dark, border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
+                  + Cr&eacute;er une &eacute;quipe
+                </button>
+              )}
+            </div>
+
+            {/* INVITATIONS EN ATTENTE */}
+            {teamInvites.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: '#f59e0b', marginBottom: '10px' }}>Invitations en attente</div>
+                {teamInvites.map((inv, i) => (
+                  <div key={i} style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{inv.team?.name}</div>
+                      <div style={{ fontSize: '11px', color: muted, marginTop: '2px' }}>Invit&eacute; par <span style={{ color: gold }}>{inv.inviter?.username}</span></div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => respondInvite(inv.id, inv.team_id, true)} style={{ background: gold, color: dark, border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                        Accepter
+                      </button>
+                      <button onClick={() => respondInvite(inv.id, inv.team_id, false)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                        Refuser
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!user ? (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>👥</div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: light, marginBottom: '8px' }}>Connecte-toi pour voir tes &eacute;quipes</div>
+                <button onClick={() => setShowAuth(true)} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', marginTop: '12px' }}>Se connecter</button>
+              </div>
+            ) : myTeams.length === 0 ? (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>👥</div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: light, marginBottom: '8px' }}>Aucune &eacute;quipe pour l&apos;instant</div>
+                <div style={{ fontSize: '13px', color: muted, marginBottom: '16px' }}>Cr&eacute;e une &eacute;quipe ou attends une invitation</div>
+                <button onClick={() => setShowCreateTeam(true)} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>Cr&eacute;er une &eacute;quipe</button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                {myTeams.map((team, i) => {
+                  const isCaptain = user && team.captain_id === user.id;
+                  return (
+                    <div key={i} style={{ background: card, border: `1px solid ${selectedTeam?.id === team.id ? gold : border}`, borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => setSelectedTeam(selectedTeam?.id === team.id ? null : team)}>
+                      {/* Banniere */}
+                      <div style={{ height: '80px', background: team.banner_url ? `url(${team.banner_url}) center/cover` : 'linear-gradient(135deg, #001a00, #002a00)', position: 'relative' }}>
+                        {team.logo_url && <img src={team.logo_url} style={{ position: 'absolute', bottom: '-20px', left: '16px', width: '44px', height: '44px', borderRadius: '50%', border: `2px solid ${gold}`, objectFit: 'cover' }} />}
+                        {!team.logo_url && <div style={{ position: 'absolute', bottom: '-20px', left: '16px', width: '44px', height: '44px', borderRadius: '50%', border: `2px solid ${gold}`, background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 900, color: gold }}>{team.name?.[0]?.toUpperCase()}</div>}
+                        {isCaptain && <div style={{ position: 'absolute', top: '8px', right: '8px', background: gold, color: dark, fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>CAPITAINE</div>}
+                      </div>
+                      <div style={{ padding: '28px 16px 16px' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: light, marginBottom: '4px' }}>{team.name}</div>
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, background: goldBg, color: gold, padding: '2px 8px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{team.game?.toUpperCase()}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 700, background: goldBg, color: gold, padding: '2px 8px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>{team.mode}</span>
+                        </div>
+
+                        {/* Membres */}
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '10px', color: muted, marginBottom: '6px' }}>Membres ({team.members?.length || 0})</div>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
+                            {(team.members || []).map((m: any, j: number) => (
+                              <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#111', padding: '4px 8px', borderRadius: '4px' }}>
+                                <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: gold, overflow: 'hidden' }}>
+                                  {m.profile?.avatar_url ? <img src={m.profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.profile?.username?.[0]?.toUpperCase()}
+                                </div>
+                                <div style={{ fontSize: '11px', color: light }}>{m.profile?.username}</div>
+                                {team.captain_id === m.profile_id && <div style={{ fontSize: '9px', color: gold }}>★</div>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                          <div style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '6px', padding: '8px 12px', textAlign: 'center' as const, flex: 1 }}>
+                            <div style={{ fontSize: '18px', fontWeight: 900, color: gold }}>{team.wins || 0}</div>
+                            <div style={{ fontSize: '9px', color: muted, textTransform: 'uppercase' as const }}>Victoires</div>
+                          </div>
+                          <div style={{ background: '#111', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px 12px', textAlign: 'center' as const, flex: 1 }}>
+                            <div style={{ fontSize: '18px', fontWeight: 900, color: muted }}>{team.losses || 0}</div>
+                            <div style={{ fontSize: '9px', color: muted, textTransform: 'uppercase' as const }}>D&eacute;faites</div>
+                          </div>
+                          <div style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '6px', padding: '8px 12px', textAlign: 'center' as const, flex: 1 }}>
+                            <div style={{ fontSize: '18px', fontWeight: 900, color: gold }}>{team.points || 0}</div>
+                            <div style={{ fontSize: '9px', color: muted, textTransform: 'uppercase' as const }}>Points</div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {isCaptain && (
+                            <InvitePlayerForm teamId={team.id} onInvite={invitePlayer} gold={gold} dark={dark} border={border} muted={muted} />
+                          )}
+                          {!isCaptain && (
+                            <button onClick={e => { e.stopPropagation(); leaveTeam(team.id); }} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                              Quitter
+                            </button>
+                          )}
+                          <button onClick={e => { e.stopPropagation(); openChat('team:' + team.id); }} style={{ background: goldBg, border: `1px solid ${greenBorder}`, color: gold, padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                            💬 Tchat
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
 
