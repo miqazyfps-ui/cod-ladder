@@ -24,6 +24,51 @@ const LADDER_GROUPS = [
 
 
 
+function SubmitResultForm({ match, onSubmit, onCancel, gold, dark, border, muted, light }: any) {
+  const [scoreA, setScoreA] = useState(0);
+  const [scoreB, setScoreB] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handle() {
+    setSubmitting(true);
+    await onSubmit(match.id, scoreA, scoreB);
+    setSubmitting(false);
+  }
+
+  return (
+    <div style={{ background: '#0f0f0f', border: `1px solid ${gold}`, borderRadius: '16px', padding: '28px', width: '380px', maxWidth: '95vw' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: light }}>Soumettre le score</div>
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center' as const }}>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Mon &eacute;quipe</div>
+          <input type="number" min="0" max="99" value={scoreA} onChange={e => setScoreA(parseInt(e.target.value) || 0)}
+            style={{ width: '70px', background: dark, border: `1px solid ${gold}`, borderRadius: '8px', padding: '10px', color: gold, fontSize: '24px', fontWeight: 900, textAlign: 'center' as const }} />
+        </div>
+        <div style={{ fontSize: '20px', color: muted, fontWeight: 700 }}>—</div>
+        <div style={{ textAlign: 'center' as const }}>
+          <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Adversaire</div>
+          <input type="number" min="0" max="99" value={scoreB} onChange={e => setScoreB(parseInt(e.target.value) || 0)}
+            style={{ width: '70px', background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px', color: light, fontSize: '24px', fontWeight: 900, textAlign: 'center' as const }} />
+        </div>
+      </div>
+      <div style={{ background: 'rgba(0,255,136,0.05)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: '8px', padding: '10px', fontSize: '12px', color: muted, marginBottom: '20px' }}>
+        L&apos;adversaire devra valider ce score. En cas de contestation, un arbitre interviendra.
+      </div>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button onClick={onCancel} style={{ flex: 1, background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+          Annuler
+        </button>
+        <button onClick={handle} disabled={submitting} style={{ flex: 2, background: gold, color: dark, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
+          {submitting ? 'Envoi...' : 'Soumettre'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CreateMatchForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
@@ -311,6 +356,12 @@ export default function Home() {
   const [showBanMenu, setShowBanMenu] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
   const [showCreateMatch, setShowCreateMatch] = useState(false);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [chatRoom, setChatRoom] = useState('');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isReferee, setIsReferee] = useState(false);
+  const [showSubmitResult, setShowSubmitResult] = useState<any>(null);
   const [matchRequests, setMatchRequests] = useState<any[]>([]);
   const [myMatches, setMyMatches] = useState<any[]>([]);
   const [now, setNow] = useState(new Date());
@@ -361,6 +412,9 @@ export default function Home() {
       setIsAdmin(true);
       fetchAllUsers();
     }
+    if (data?.is_referee || data?.is_admin) {
+      setIsReferee(true);
+    }
   }
 
   async function fetchAllUsers() {
@@ -406,6 +460,92 @@ export default function Home() {
       setSelectedPlayer((prev: any) => prev ? {...prev, is_admin: newVal} : null);
       await fetchAllUsers();
     }
+  }
+
+  // ===== CHAT =====
+  async function openChat(roomId: string) {
+    setChatRoom(roomId);
+    setActiveChat(roomId);
+    const { data } = await supabase
+      .from('messages')
+      .select('*, sender:sender_id(username, avatar_url)')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: true });
+    setChatMessages(data || []);
+
+    // Souscrire au realtime
+    supabase.channel('room:' + roomId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'room_id=eq.' + roomId },
+        async (payload) => {
+          const { data: msg } = await supabase.from('messages').select('*, sender:sender_id(username, avatar_url)').eq('id', payload.new.id).single();
+          if (msg) setChatMessages(prev => [...prev, msg]);
+        }
+      ).subscribe();
+  }
+
+  async function sendMessage() {
+    if (!chatInput.trim() || !user || !chatRoom) return;
+    await supabase.from('messages').insert({ room_id: chatRoom, sender_id: user.id, content: chatInput.trim() });
+    setChatInput('');
+  }
+
+  function closeChat() {
+    supabase.removeAllChannels();
+    setActiveChat(null);
+    setChatRoom('');
+    setChatMessages([]);
+  }
+
+  // ===== VALIDATION SCORES =====
+  async function submitResult(requestId: string, scoreA: number, scoreB: number) {
+    if (!user) return;
+    await supabase.from('match_requests').update({
+      result_score_a: scoreA,
+      result_score_b: scoreB,
+      result_submitted_by: user.id,
+      result_status: 'waiting_validation',
+    }).eq('id', requestId);
+    fetchData();
+    setShowSubmitResult(null);
+  }
+
+  async function validateResult(requestId: string, isRequester: boolean) {
+    if (!user) return;
+    const updateField = isRequester ? 'result_validated_requester' : 'result_validated_opponent';
+    const { data: req } = await supabase.from('match_requests').select('*').eq('id', requestId).single();
+    
+    const update: any = { [updateField]: true };
+    const otherValidated = isRequester ? req?.result_validated_opponent : req?.result_validated_requester;
+    
+    if (otherValidated) {
+      update.result_status = 'validated';
+      update.status = 'completed';
+    }
+    
+    await supabase.from('match_requests').update(update).eq('id', requestId);
+    fetchData();
+  }
+
+  async function contestResult(requestId: string) {
+    if (!user) return;
+    await supabase.from('match_requests').update({
+      result_contested: true,
+      result_status: 'contested',
+    }).eq('id', requestId);
+    // Ouvrir le chat arbitrage
+    openChat('arbitrage:' + requestId);
+    fetchData();
+  }
+
+  async function adminForceResult(requestId: string, scoreA: number, scoreB: number, winnerIsA: boolean) {
+    await supabase.from('match_requests').update({
+      result_score_a: scoreA,
+      result_score_b: scoreB,
+      result_status: 'validated',
+      result_contested: false,
+      status: 'completed',
+    }).eq('id', requestId);
+    fetchData();
   }
 
   async function createMatchRequest(plannedAt: string) {
@@ -646,6 +786,70 @@ export default function Home() {
         </div>
       )}
 
+      {/* MODAL CHAT */}
+      {activeChat && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#0f0f0f', border: `1px solid ${chatRoom.startsWith('staff') ? '#f59e0b' : chatRoom.startsWith('arbitrage') ? '#ef4444' : gold}`, borderRadius: '16px', width: '480px', maxWidth: '95vw', height: '560px', display: 'flex', flexDirection: 'column' as const }}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: chatRoom.startsWith('staff') ? '#f59e0b' : chatRoom.startsWith('arbitrage') ? '#ef4444' : gold }}>
+                  {chatRoom.startsWith('staff') ? '⚖️ Tchat Staff' : chatRoom.startsWith('arbitrage') ? '🚨 Arbitrage' : '💬 Tchat du match'}
+                </div>
+                <div style={{ fontSize: '11px', color: muted, marginTop: '2px' }}>
+                  {chatRoom.startsWith('staff') ? 'Admins et Arbitres uniquement' : chatRoom.startsWith('arbitrage') ? 'Contestation en cours' : 'Entre les deux équipes'}
+                </div>
+              </div>
+              <button onClick={closeChat} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' as const, padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+              {chatMessages.length === 0 && (
+                <div style={{ textAlign: 'center', color: muted, fontSize: '13px', marginTop: '40px' }}>Aucun message pour l&apos;instant</div>
+              )}
+              {chatMessages.map((msg, i) => {
+                const isMe = user && msg.sender_id === user.id;
+                return (
+                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexDirection: isMe ? 'row-reverse' as const : 'row' as const }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(0,255,136,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: gold, flexShrink: 0, overflow: 'hidden' }}>
+                      {msg.sender?.avatar_url ? <img src={msg.sender.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : msg.sender?.username?.[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ maxWidth: '70%' }}>
+                      <div style={{ fontSize: '10px', color: muted, marginBottom: '3px', textAlign: isMe ? 'right' as const : 'left' as const }}>{msg.sender?.username}</div>
+                      <div style={{ background: isMe ? 'rgba(0,255,136,0.12)' : '#1a1a1a', border: `1px solid ${isMe ? 'rgba(0,255,136,0.25)' : border}`, borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '8px 12px', fontSize: '13px', color: light }}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding: '12px 16px', borderTop: `1px solid ${border}`, display: 'flex', gap: '8px' }}>
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                placeholder="Envoyer un message..."
+                style={{ flex: 1, background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', color: light, fontSize: '13px' }}
+              />
+              <button onClick={sendMessage} style={{ background: gold, color: dark, border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
+                ➤
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SOUMETTRE RESULTAT */}
+      {showSubmitResult && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <SubmitResultForm
+            match={showSubmitResult}
+            onSubmit={submitResult}
+            onCancel={() => setShowSubmitResult(null)}
+            gold={gold} dark={dark} border={border} muted={muted} light={light}
+          />
+        </div>
+      )}
+
       {/* MODAL CREER MATCH */}
       {showCreateMatch && user && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -671,6 +875,7 @@ export default function Home() {
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
           {isAdmin && <button onClick={() => setActiveTab('admin')} style={{...navBtn(activeTab === 'admin'), color: activeTab === 'admin' ? '#ef4444' : '#666', background: activeTab === 'admin' ? 'rgba(239,68,68,0.1)' : 'none'}}>Admin</button>}
+          {(isReferee || isAdmin) && <button onClick={() => openChat('staff:general')} style={{...navBtn(false), color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '6px'}}>⚖️ Staff</button>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {user ? (
@@ -1046,18 +1251,53 @@ export default function Home() {
                                 <div style={{ fontSize: '13px', color: muted, fontStyle: 'italic' }}>En attente d&apos;un adversaire...</div>
                               )}
                             </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
                               {r.status === 'open' && !isRequester && user && (
                                 <button onClick={() => joinMatchRequest(r.id)} style={{ background: gold, color: dark, border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                                   Rejoindre
                                 </button>
+                              )}
+                              {r.status === 'accepted' && revealed && isMyMatch && (
+                                <button onClick={() => openChat('match:' + r.id)} style={{ background: 'rgba(0,255,136,0.1)', border: `1px solid ${gold}`, color: gold, padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                  💬 Tchat
+                                </button>
+                              )}
+                              {r.status === 'accepted' && revealed && isMyMatch && !r.result_submitted_by && (
+                                <button onClick={() => setShowSubmitResult(r)} style={{ background: 'rgba(0,255,136,0.1)', border: `1px solid ${gold}`, color: gold, padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                  📊 Soumettre score
+                                </button>
+                              )}
+                              {r.result_submitted_by && r.result_status === 'waiting_validation' && isMyMatch && (
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <div style={{ fontSize: '12px', color: muted, padding: '8px', background: '#111', borderRadius: '6px' }}>
+                                    {r.result_score_a} — {r.result_score_b}
+                                  </div>
+                                  {((isRequester && !r.result_validated_requester) || (!isRequester && !r.result_validated_opponent)) && (
+                                    <>
+                                      <button onClick={() => validateResult(r.id, isRequester)} style={{ background: 'rgba(0,255,136,0.1)', border: `1px solid ${gold}`, color: gold, padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                                        ✅ Valider
+                                      </button>
+                                      <button onClick={() => { contestResult(r.id); }} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                                        🚨 Contester
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                              {r.result_status === 'contested' && (isReferee || isAdmin) && (
+                                <button onClick={() => openChat('arbitrage:' + r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                  ⚖️ Arbitrer
+                                </button>
+                              )}
+                              {r.result_status === 'validated' && (
+                                <div style={{ fontSize: '11px', color: gold, fontWeight: 700, padding: '8px' }}>✅ Validé {r.result_score_a}—{r.result_score_b}</div>
                               )}
                               {isMyMatch && cancelable && (
                                 <button onClick={() => cancelMatchRequest(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                                   Annuler
                                 </button>
                               )}
-                              {isMyMatch && !cancelable && r.status === 'accepted' && (
+                              {isMyMatch && !cancelable && r.status === 'accepted' && r.result_status === 'pending' && (
                                 <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 700 }}>Annulation impossible</div>
                               )}
                             </div>
@@ -1528,6 +1768,7 @@ export default function Home() {
                         </div>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
+                          {u.is_referee && !u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ARBITRE</span>}
                           {banStatus && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>BANNI {banStatus}</span>}
                           {u.id !== user.id && <span style={{ fontSize: '11px', color: muted }}>›</span>}
                         </div>
