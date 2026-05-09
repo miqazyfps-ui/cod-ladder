@@ -284,8 +284,13 @@ function ProfileInput({ value, userId, field, label, onSave, gold, dark, border,
 
   async function save() {
     setSaving(true);
-    await supabase.from('profiles').update({ [field]: val }).eq('id', userId);
-    await onSave(userId);
+    const { error } = await supabase.from('profiles').update({ [field]: val }).eq('id', userId);
+    if (error) {
+      console.error('Save error:', error);
+      alert('Erreur: ' + error.message);
+    } else {
+      await onSave(userId);
+    }
     setSaving(false);
   }
 
