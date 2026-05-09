@@ -25,43 +25,97 @@ const LADDER_GROUPS = [
 
 
 function CreateMatchForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
-  const [plannedDate, setPlannedDate] = useState('');
-  const [plannedTime, setPlannedTime] = useState('');
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().split('T')[0];
+
+  // Générer les créneaux de 15 min à partir de maintenant + 30min
+  function getSlots(dateStr: string) {
+    const slots = [];
+    const isToday = dateStr === todayStr;
+    const startH = isToday ? now.getHours() : 0;
+    const startM = isToday ? Math.ceil((now.getMinutes() + 30) / 15) * 15 : 0;
+    for (let h = startH; h < 24; h++) {
+      const mStart = (h === startH) ? startM : 0;
+      for (let m = mStart; m < 60; m += 15) {
+        if (m >= 60) continue;
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        slots.push({ value: hh + ':' + mm, label: hh + 'h' + mm });
+      }
+    }
+    return slots;
+  }
+
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedSlot, setSelectedSlot] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const slots = getSlots(selectedDate);
 
   async function handle() {
-    if (!plannedDate || !plannedTime) { alert('Choisis une date et une heure'); return; }
-    const plannedAt = new Date(plannedDate + 'T' + plannedTime).toISOString();
-    const matchTime = new Date(plannedAt).getTime();
-    if (matchTime <= Date.now()) { alert('La date doit etre dans le futur'); return; }
+    if (!selectedSlot) { alert('Choisis un créneau horaire'); return; }
+    const plannedAt = new Date(selectedDate + 'T' + selectedSlot + ':00').toISOString();
+    if (new Date(plannedAt).getTime() <= Date.now()) { alert('Ce créneau est passé'); return; }
     setSubmitting(true);
     await onSubmit(plannedAt);
     setSubmitting(false);
   }
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate());
-  const minDate = tomorrow.toISOString().split('T')[0];
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
       <div style={{ background: 'rgba(0,255,136,0.05)', border: '1px solid rgba(0,255,136,0.2)', borderRadius: '8px', padding: '12px', fontSize: '12px', color: muted, lineHeight: 1.6 }}>
-        <span style={{ color: gold, fontWeight: 700 }}>Blind Match</span> — L&apos;adversaire reste cach&eacute; jusqu&apos;&agrave; 5 minutes avant le match. Annulation possible jusqu&apos;&agrave; ce moment.
+        <span style={{ color: gold, fontWeight: 700 }}>Blind Match</span> &mdash; L&apos;adversaire est r&eacute;v&eacute;l&eacute; 5 min avant. Annulation possible avant ce moment.
       </div>
+
+      {/* Choix du jour */}
       <div>
-        <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Date du match</div>
-        <input type="date" value={plannedDate} min={minDate} onChange={e => setPlannedDate(e.target.value)} style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', color: light, fontSize: '14px' }} />
+        <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Jour du match</div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[
+            { value: todayStr, label: "Aujourd’hui" },
+            { value: tomorrowStr, label: 'Demain' },
+          ].map(d => (
+            <button key={d.value} onClick={() => { setSelectedDate(d.value); setSelectedSlot(''); }}
+              style={{ flex: 1, background: selectedDate === d.value ? 'rgba(0,255,136,0.1)' : dark, border: `1px solid ${selectedDate === d.value ? gold : border}`, color: selectedDate === d.value ? gold : muted, padding: '10px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+              {d.label}
+            </button>
+          ))}
+          <input type="date" value={selectedDate} min={todayStr}
+            onChange={e => { setSelectedDate(e.target.value); setSelectedSlot(''); }}
+            style={{ flex: 1, background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px', color: muted, fontSize: '12px', cursor: 'pointer' }} />
+        </div>
       </div>
+
+      {/* Grille des créneaux */}
       <div>
-        <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Heure du match</div>
-        <input type="time" value={plannedTime} onChange={e => setPlannedTime(e.target.value)} style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', color: light, fontSize: '14px' }} />
+        <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Choisir un cr&eacute;neau</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', maxHeight: '200px', overflowY: 'auto' as const, paddingRight: '4px' }}>
+          {slots.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: muted, fontSize: '12px', padding: '16px' }}>
+              Aucun cr&eacute;neau disponible aujourd&apos;hui — choisissez demain
+            </div>
+          ) : slots.map(s => (
+            <button key={s.value} onClick={() => setSelectedSlot(s.value)}
+              style={{ background: selectedSlot === s.value ? gold : dark, color: selectedSlot === s.value ? dark : muted, border: `1px solid ${selectedSlot === s.value ? gold : border}`, borderRadius: '6px', padding: '8px 4px', fontSize: '12px', fontWeight: selectedSlot === s.value ? 800 : 400, cursor: 'pointer', textAlign: 'center' as const }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {selectedSlot && (
+        <div style={{ background: 'rgba(0,255,136,0.08)', border: `1px solid ${gold}`, borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: gold, fontWeight: 700, textAlign: 'center' as const }}>
+          Match pr&eacute;vu le {new Date(selectedDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} &agrave; {selectedSlot.replace(':', 'h')}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: '10px' }}>
         <button onClick={onCancel} style={{ flex: 1, background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
           Annuler
         </button>
-        <button onClick={handle} disabled={submitting} style={{ flex: 2, background: gold, color: dark, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
-          {submitting ? 'En cours...' : 'Publier le match'}
+        <button onClick={handle} disabled={submitting || !selectedSlot}
+          style={{ flex: 2, background: selectedSlot ? gold : '#333', color: selectedSlot ? dark : muted, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: selectedSlot ? 'pointer' : 'default', opacity: submitting ? 0.7 : 1 }}>
+          {submitting ? 'Publication...' : 'Publier le match'}
         </button>
       </div>
     </div>
