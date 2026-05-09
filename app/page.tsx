@@ -24,6 +24,50 @@ const LADDER_GROUPS = [
 
 
 
+function CreateMatchForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
+  const [plannedDate, setPlannedDate] = useState('');
+  const [plannedTime, setPlannedTime] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handle() {
+    if (!plannedDate || !plannedTime) { alert('Choisis une date et une heure'); return; }
+    const plannedAt = new Date(plannedDate + 'T' + plannedTime).toISOString();
+    const matchTime = new Date(plannedAt).getTime();
+    if (matchTime <= Date.now()) { alert('La date doit etre dans le futur'); return; }
+    setSubmitting(true);
+    await onSubmit(plannedAt);
+    setSubmitting(false);
+  }
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate());
+  const minDate = tomorrow.toISOString().split('T')[0];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
+      <div style={{ background: 'rgba(0,255,136,0.05)', border: '1px solid rgba(0,255,136,0.2)', borderRadius: '8px', padding: '12px', fontSize: '12px', color: muted, lineHeight: 1.6 }}>
+        <span style={{ color: gold, fontWeight: 700 }}>Blind Match</span> — L&apos;adversaire reste cach&eacute; jusqu&apos;&agrave; 5 minutes avant le match. Annulation possible jusqu&apos;&agrave; ce moment.
+      </div>
+      <div>
+        <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Date du match</div>
+        <input type="date" value={plannedDate} min={minDate} onChange={e => setPlannedDate(e.target.value)} style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', color: light, fontSize: '14px' }} />
+      </div>
+      <div>
+        <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Heure du match</div>
+        <input type="time" value={plannedTime} onChange={e => setPlannedTime(e.target.value)} style={{ width: '100%', background: dark, border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', color: light, fontSize: '14px' }} />
+      </div>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button onClick={onCancel} style={{ flex: 1, background: 'transparent', border: `1px solid ${border}`, color: muted, padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+          Annuler
+        </button>
+        <button onClick={handle} disabled={submitting} style={{ flex: 2, background: gold, color: dark, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
+          {submitting ? 'En cours...' : 'Publier le match'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdminMatchForm({ onCreate, gold, dark, border, muted }: any) {
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
@@ -186,11 +230,20 @@ export default function Home() {
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [showBanMenu, setShowBanMenu] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
+  const [showCreateMatch, setShowCreateMatch] = useState(false);
+  const [matchRequests, setMatchRequests] = useState<any[]>([]);
+  const [myMatches, setMyMatches] = useState<any[]>([]);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => {
       setHeroSlide(prev => (prev + 1) % 2);
     }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
   const [user, setUser] = useState<any>(null);
@@ -275,6 +328,61 @@ export default function Home() {
     }
   }
 
+  async function createMatchRequest(plannedAt: string) {
+    if (!user) { setShowAuth(true); return; }
+    const { error } = await supabase.from('match_requests').insert({
+      requester_id: user.id,
+      game: selectedGame,
+      mode: activeLadder,
+      category: selectedCategory || 'normal',
+      planned_at: plannedAt,
+      status: 'open',
+      tournament_id: '00000000-0000-0000-0000-000000000000',
+    });
+    if (error) { alert('Erreur: ' + error.message); return; }
+    setShowCreateMatch(false);
+    fetchData();
+  }
+
+  async function joinMatchRequest(requestId: string) {
+    if (!user) { setShowAuth(true); return; }
+    const { error } = await supabase.from('match_requests').update({
+      opponent_id: user.id,
+      status: 'accepted',
+    }).eq('id', requestId).eq('status', 'open');
+    if (error) { alert('Erreur: ' + error.message); return; }
+    fetchData();
+  }
+
+  async function cancelMatchRequest(requestId: string) {
+    if (!user) return;
+    await supabase.from('match_requests').update({ status: 'cancelled' }).eq('id', requestId);
+    fetchData();
+  }
+
+  function isRevealed(plannedAt: string) {
+    const matchTime = new Date(plannedAt).getTime();
+    const fiveMinBefore = matchTime - 5 * 60 * 1000;
+    return now.getTime() >= fiveMinBefore;
+  }
+
+  function canCancel(plannedAt: string) {
+    const matchTime = new Date(plannedAt).getTime();
+    const fiveMinBefore = matchTime - 5 * 60 * 1000;
+    return now.getTime() < fiveMinBefore;
+  }
+
+  function timeUntilReveal(plannedAt: string) {
+    const matchTime = new Date(plannedAt).getTime();
+    const fiveMinBefore = matchTime - 5 * 60 * 1000;
+    const diff = fiveMinBefore - now.getTime();
+    if (diff <= 0) return null;
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    if (h > 0) return h + 'h' + m + 'min';
+    return m + ' min';
+  }
+
   async function banPlayer(userId: string, duration: string) {
     let bannedUntil: string | null = null;
     if (duration === '1h') bannedUntil = new Date(Date.now() + 3600000).toISOString();
@@ -324,8 +432,13 @@ export default function Home() {
     setLoading(true);
     const { data: m } = await supabase.from('matches').select('*, team_a:team_a_id(name), team_b:team_b_id(name)').order('created_at', { ascending: false });
     const { data: lb } = await supabase.from('leaderboard').select('*').limit(10);
+    const { data: mr } = await supabase.from('match_requests').select('*, requester:requester_id(username, avatar_url), opponent:opponent_id(username, avatar_url)').order('planned_at', { ascending: true });
     setMatches(m || []);
     setLeaderboard(lb || []);
+    setMatchRequests(mr || []);
+    if (user) {
+      setMyMatches((mr || []).filter((r: any) => r.requester_id === user.id || r.opponent_id === user.id));
+    }
     setLoading(false);
   }
 
@@ -449,6 +562,22 @@ export default function Home() {
                 },
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CREER MATCH */}
+      {showCreateMatch && user && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#0f0f0f', border: `1px solid ${gold}`, borderRadius: '16px', padding: '28px', width: '420px', maxWidth: '90vw' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: light }}>Lancer un match</div>
+              <button onClick={() => setShowCreateMatch(false)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+            </div>
+            <div style={{ background: '#0a0a0a', border: `1px solid ${border}`, borderRadius: '8px', padding: '12px', marginBottom: '16px', fontSize: '13px', color: muted }}>
+              <span style={{ color: gold, fontWeight: 700 }}>{selectedGame === 'bo7' ? 'Black Ops 7' : 'FC 26'}</span> &middot; <span style={{ color: gold }}>{activeLadder}</span> &middot; <span style={{ color: selectedCategory === 'hardcore' ? '#ef4444' : gold }}>{selectedCategory === 'hardcore' ? 'Hardcore' : 'Normal'}</span>
+            </div>
+            <CreateMatchForm onSubmit={createMatchRequest} onCancel={() => setShowCreateMatch(false)} gold={gold} dark={dark} border={border} muted={muted} light={light} />
           </div>
         </div>
       )}
@@ -779,13 +908,86 @@ export default function Home() {
                   ))
                 }
               </div>
-              <button onClick={() => { if (!user) setShowAuth(true); }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
+              <button onClick={() => { if (!user) { setShowAuth(true); } else { setShowCreateMatch(true); } }} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' as const }}>
                 Lancer un match
               </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
               <div>
+                {/* MATCH REQUESTS */}
+                {matchRequests.filter(r => r.game === selectedGame && r.mode === activeLadder && r.status !== 'cancelled').length > 0 && (
+                  <>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, marginBottom: '12px' }}>
+                      Matchs planifi&eacute;s
+                    </div>
+                    {matchRequests.filter(r => r.game === selectedGame && r.mode === activeLadder && r.status !== 'cancelled').map((r, i) => {
+                      const revealed = isRevealed(r.planned_at);
+                      const cancelable = canCancel(r.planned_at);
+                      const revealTime = timeUntilReveal(r.planned_at);
+                      const isMyMatch = user && (r.requester_id === user.id || r.opponent_id === user.id);
+                      const isRequester = user && r.requester_id === user.id;
+                      return (
+                        <div key={i} style={{ background: '#0f0f0f', border: `1px solid ${revealed ? gold : border}`, borderRadius: '10px', padding: '14px 16px', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ fontSize: '10px', fontWeight: 700, background: r.status === 'accepted' ? 'rgba(0,255,136,0.1)' : 'rgba(255,215,0,0.1)', color: r.status === 'accepted' ? gold : '#ffd700', padding: '3px 10px', borderRadius: '4px', border: `1px solid ${r.status === 'accepted' ? gold : '#ffd700'}` }}>
+                                {r.status === 'accepted' ? 'ACCEPT&Eacute;' : 'EN ATTENTE'}
+                              </div>
+                              <div style={{ fontSize: '12px', color: muted }}>
+                                {new Date(r.planned_at).toLocaleDateString('fr-FR')} &agrave; {new Date(r.planned_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                            {!revealed && revealTime && (
+                              <div style={{ fontSize: '11px', color: '#ffd700', fontWeight: 700 }}>
+                                Adversaire r&eacute;v&eacute;l&eacute; dans {revealTime}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,255,136,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                                  {r.requester?.avatar_url ? <img src={r.requester.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : r.requester?.username?.[0]?.toUpperCase()}
+                                </div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{r.requester?.username}</div>
+                              </div>
+                              <div style={{ fontSize: '14px', color: muted, fontWeight: 700 }}>VS</div>
+                              {r.status === 'accepted' && revealed ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,255,136,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                                    {r.opponent?.avatar_url ? <img src={r.opponent.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : r.opponent?.username?.[0]?.toUpperCase()}
+                                  </div>
+                                  <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{r.opponent?.username}</div>
+                                </div>
+                              ) : r.status === 'accepted' ? (
+                                <div style={{ fontSize: '13px', color: muted, fontStyle: 'italic' }}>Adversaire cach&eacute; 🔒</div>
+                              ) : (
+                                <div style={{ fontSize: '13px', color: muted, fontStyle: 'italic' }}>En attente d&apos;un adversaire...</div>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {r.status === 'open' && !isRequester && user && (
+                                <button onClick={() => joinMatchRequest(r.id)} style={{ background: gold, color: dark, border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                  Rejoindre
+                                </button>
+                              )}
+                              {isMyMatch && cancelable && (
+                                <button onClick={() => cancelMatchRequest(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                  Annuler
+                                </button>
+                              )}
+                              {isMyMatch && !cancelable && r.status === 'accepted' && (
+                                <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 700 }}>Annulation impossible</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, marginBottom: '14px' }}>
                   Matchs en cours &mdash; {activeLadder} &mdash; {selectedGame === 'bo7' ? 'Black Ops 7' : 'FC 26'}
                 </div>
