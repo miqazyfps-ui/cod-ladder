@@ -1436,7 +1436,12 @@ export default function Home() {
                               {r.result_status === 'validated' && (
                                 <div style={{ fontSize: '11px', color: gold, fontWeight: 700, padding: '8px' }}>✅ Validé {r.result_score_a}—{r.result_score_b}</div>
                               )}
-                              {isMyMatch && cancelable && (
+                              {isRequester && r.status === 'open' && (
+                                <button onClick={() => cancelMatchRequest(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                  Annuler
+                                </button>
+                              )}
+                              {isMyMatch && cancelable && r.status === 'accepted' && (
                                 <button onClick={() => cancelMatchRequest(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                                   Annuler
                                 </button>
