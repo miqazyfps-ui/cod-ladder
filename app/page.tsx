@@ -24,6 +24,29 @@ const LADDER_GROUPS = [
 
 
 
+const StableAuthForm = memo(function StableAuthForm({ gold, onClose }: { gold: string, onClose: () => void }) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', right: 0, top: 0, background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>x</button>
+        <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={140} height={60} style={{ objectFit: 'contain' }} />
+      </div>
+      <Auth
+        supabaseClient={supabase}
+        appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: gold, brandAccent: '#00cc6a', inputBackground: '#1a1a1a', inputText: '#e2e8f0', inputPlaceholder: '#666', inputBorder: '#2a2a2a', inputBorderFocus: gold } } } }}
+        providers={['discord']}
+        localization={{
+          variables: {
+            sign_in: { email_label: 'Adresse email', password_label: 'Mot de passe', button_label: 'Se connecter', link_text: 'Vous avez deja un compte ? Connectez-vous', email_input_placeholder: 'Votre adresse email', password_input_placeholder: 'Votre mot de passe' },
+            sign_up: { email_label: 'Adresse email', password_label: 'Mot de passe', button_label: "S'inscrire", link_text: 'Pas encore de compte ? Inscrivez-vous', email_input_placeholder: 'Votre adresse email', password_input_placeholder: 'Choisissez un mot de passe', confirmation_text: 'Verifiez votre email' },
+            forgotten_password: { link_text: 'Mot de passe oublie ?', button_label: 'Envoyer le lien', email_label: 'Adresse email', email_input_placeholder: 'Votre adresse email' },
+          },
+        }}
+      />
+    </>
+  );
+});
+
 function CreateTeamForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
   const [name, setName] = useState('');
   const [game, setGame] = useState('bo7');
@@ -894,43 +917,8 @@ export default function Home() {
 
       {showAuth && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: card, border: `1px solid ${gold}`, borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
-              <button onClick={() => setShowAuth(false)} style={{ position: 'absolute', right: 0, top: 0, background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
-              <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={140} height={60} style={{ objectFit: 'contain' }} />
-            </div>
-            <Auth
-              supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa, variables: { default: { colors: { brand: '#00ff88', brandAccent: '#00cc6a', inputBackground: '#1a1a1a', inputText: '#e2e8f0', inputPlaceholder: '#666', inputBorder: '#2a2a2a', inputBorderFocus: '#00ff88' } } } }}
-              providers={['discord']}
-              localization={{
-                variables: {
-                  sign_in: {
-                    email_label: 'Adresse email',
-                    password_label: 'Mot de passe',
-                    button_label: 'Se connecter',
-                    link_text: 'Vous avez deja un compte ? Connectez-vous',
-                    email_input_placeholder: 'Votre adresse email',
-                    password_input_placeholder: 'Votre mot de passe',
-                  },
-                  sign_up: {
-                    email_label: 'Adresse email',
-                    password_label: 'Mot de passe',
-                    button_label: "S'inscrire",
-                    link_text: 'Pas encore de compte ? Inscrivez-vous',
-                    email_input_placeholder: 'Votre adresse email',
-                    password_input_placeholder: 'Choisissez un mot de passe',
-                    confirmation_text: 'Verifiez votre email pour confirmer votre inscription',
-                  },
-                  forgotten_password: {
-                    link_text: 'Mot de passe oublie ?',
-                    button_label: 'Envoyer le lien de reinitialisation',
-                    email_label: 'Adresse email',
-                    email_input_placeholder: 'Votre adresse email',
-                  },
-                },
-              }}
-            />
+          <div style={{ background: '#0f0f0f', border: `1px solid ${gold}`, borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw' }}>
+            <StableAuthForm gold={gold} onClose={() => setShowAuth(false)} />
           </div>
         </div>
       )}
