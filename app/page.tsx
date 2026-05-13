@@ -2058,6 +2058,173 @@ export default function Home() {
           </>
         )}
 
+        {/* ADMIN */}
+        {activeTab === 'admin' && isAdmin && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: '#ef4444' }}>Panneau Admin</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              {['tous les matchs', 'matchs', 'joueurs', 'rangs'].map(t => (
+                <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {adminTab === 'rangs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Aper&ccedil;u des rangs</div>
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                  {[
+                    { range: 'LVL 1-19', label: 'BRONZE', color: '#cd7f32', desc: 'Débutant' },
+                    { range: 'LVL 20-49', label: 'ARGENT', color: '#94a3b8', desc: 'Confirmé' },
+                    { range: 'LVL 50-99', label: 'OR', color: '#ffd700', desc: 'Expérimenté' },
+                    { range: 'LVL 100-199', label: 'PLATINE', color: '#7dd3fc', desc: 'Élite' },
+                    { range: 'LVL 200-299', label: 'DIAMANT', color: '#3b82f6', desc: 'Maître' },
+                    { range: 'LVL 300-399', label: 'MAITRE', color: '#00ff88', desc: 'Champion' },
+                    { range: 'LVL 400-500', label: 'LEGENDAIRE', color: '#a855f7', desc: 'Légende' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: getLevelBadge(i === 0 ? 1 : i === 1 ? 20 : i === 2 ? 50 : i === 3 ? 100 : i === 4 ? 200 : i === 5 ? 300 : 400).bg, border: `1px solid ${getLevelBadge(i === 0 ? 1 : i === 1 ? 20 : i === 2 ? 50 : i === 3 ? 100 : i === 4 ? 200 : i === 5 ? 300 : 400).border}`, borderRadius: '8px' }}>
+                      <BadgeSVG level={i === 0 ? 1 : i === 1 ? 20 : i === 2 ? 50 : i === 3 ? 100 : i === 4 ? 200 : i === 5 ? 300 : 400} size={36} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: r.color }}>{r.label}</div>
+                        <div style={{ fontSize: '11px', color: muted, marginTop: '2px' }}>{r.range} &middot; {r.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'tous les matchs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Tous les matchs ({matches.length})</div>
+                {matches.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: muted }}>Aucun match</div>
+                ) : matches.map((m, i) => (
+                  <div key={i} style={{ padding: '14px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: m.status === 'live' ? 'rgba(239,68,68,0.15)' : m.status === 'completed' ? 'rgba(0,255,136,0.1)' : 'rgba(100,116,139,0.1)', color: m.status === 'live' ? '#ef4444' : m.status === 'completed' ? gold : muted }}>{m.status?.toUpperCase()}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name || 'TBD'}</span>
+                      <span style={{ color: muted }}>vs</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name || 'TBD'}</span>
+                      <span style={{ color: muted, fontSize: '13px' }}>{m.score_a} — {m.score_b}</span>
+                    </div>
+                    <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {adminTab === 'matchs' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Cr&eacute;er un match</div>
+                  <AdminMatchForm onCreate={createMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                </div>
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Matchs en cours</div>
+                  {liveMatches.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '13px' }}>Aucun match en cours</div>
+                  ) : liveMatches.map((m, i) => (
+                    <div key={i} style={{ padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name}</span>
+                        <span style={{ color: muted }}>vs</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name}</span>
+                      </div>
+                      <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'joueurs' && (
+              <>
+                {showBanMenu && selectedPlayer && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#0f0f0f', border: '1px solid #ef4444', borderRadius: '16px', padding: '28px', width: '360px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#ef4444' }}>Bannir {selectedPlayer.username}</div>
+                        <button onClick={() => { setShowBanMenu(false); setSelectedPlayer(null); }} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                        {[{label:'1 heure',value:'1h'},{label:'24 heures',value:'24h'},{label:'48 heures',value:'48h'},{label:'7 jours',value:'7j'},{label:'Permanent',value:'permanent'}].map(opt => (
+                          <button key={opt.value} onClick={() => banPlayer(selectedPlayer.id, opt.value)} style={{ background: opt.value === 'permanent' ? 'rgba(239,68,68,0.15)' : '#111', border: `1px solid ${opt.value === 'permanent' ? '#ef4444' : border}`, color: opt.value === 'permanent' ? '#ef4444' : light, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const }}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {selectedPlayer && !showBanMenu && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#0f0f0f', border: `1px solid ${border}`, borderRadius: '16px', padding: '28px', width: '360px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                            {selectedPlayer.avatar_url ? <img src={selectedPlayer.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : selectedPlayer.username?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '15px', fontWeight: 800, color: light }}>{selectedPlayer.username}</div>
+                            {selectedPlayer.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{selectedPlayer.discord_username}</div>}
+                          </div>
+                        </div>
+                        <button onClick={() => setSelectedPlayer(null)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                        <button onClick={() => toggleAdmin(selectedPlayer.id, selectedPlayer.is_admin)} style={{ background: selectedPlayer.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${selectedPlayer.is_admin ? 'rgba(239,68,68,0.3)' : greenBorder}`, color: selectedPlayer.is_admin ? '#ef4444' : gold, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                          {selectedPlayer.is_admin ? 'Retirer les droits admin' : 'Nommer admin'}
+                        </button>
+                        <button onClick={async () => { await supabase.from('profiles').update({ is_referee: !selectedPlayer.is_referee }).eq('id', selectedPlayer.id); await fetchAllUsers(); setSelectedPlayer((p: any) => ({...p, is_referee: !p.is_referee})); }} style={{ background: selectedPlayer.is_referee ? 'rgba(245,158,11,0.1)' : '#111', border: `1px solid ${selectedPlayer.is_referee ? 'rgba(245,158,11,0.4)' : border}`, color: selectedPlayer.is_referee ? '#f59e0b' : muted, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                          {selectedPlayer.is_referee ? 'Retirer arbitre' : '⚖️ Nommer arbitre'}
+                        </button>
+                        {selectedPlayer.is_banned ? (
+                          <button onClick={() => { unbanPlayer(selectedPlayer.id); setSelectedPlayer(null); }} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                            Lever le ban
+                          </button>
+                        ) : (
+                          <button onClick={() => setShowBanMenu(true)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                            Bannir ce joueur
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Gestion des joueurs ({allUsers.length})</div>
+                  {allUsers.map((u, i) => {
+                    const banStatus = getBanStatus(u);
+                    return (
+                      <div key={i} onClick={() => { if (u.id !== user?.id) { setSelectedPlayer(u); setShowBanMenu(false); } }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111`, cursor: u.id !== user?.id ? 'pointer' : 'default' }}
+                        onMouseEnter={e => { if (u.id !== user?.id) e.currentTarget.style.background = '#161616'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden', flexShrink: 0 }}>
+                          {u.avatar_url ? <img src={u.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: banStatus ? '#ef4444' : light }}>{u.username}</div>
+                          {u.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{u.discord_username}</div>}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
+                          {u.is_referee && !u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ARBITRE</span>}
+                          {banStatus && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>BANNI {banStatus}</span>}
+                          {u.id !== user?.id && <span style={{ fontSize: '11px', color: muted }}>›</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
         {/* TOURNOIS */}
         {activeTab === 'tournois' && (
           <div style={{ textAlign: 'center', padding: '80px 24px', color: muted }}>
@@ -2317,3 +2484,212 @@ export default function Home() {
             )}
           </>
         )}
+        {/* RANGS */}
+        {activeTab === 'rangs' && (
+          <>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: gold, marginBottom: '20px' }}>Syst&egrave;me de rangs</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              {[
+                { min: 1, max: 19, label: 'BRONZE', color: '#cd7f32', desc: 'Débutant' },
+                { min: 20, max: 49, label: 'ARGENT', color: '#94a3b8', desc: 'Confirmé' },
+                { min: 50, max: 99, label: 'OR', color: '#ffd700', desc: 'Expérimenté' },
+                { min: 100, max: 199, label: 'PLATINE', color: '#7dd3fc', desc: 'Élite' },
+                { min: 200, max: 299, label: 'DIAMANT', color: '#3b82f6', desc: 'Maître' },
+                { min: 300, max: 399, label: 'MAITRE', color: '#00ff88', desc: 'Champion' },
+                { min: 400, max: 500, label: 'LEGENDAIRE', color: '#a855f7', desc: 'Légende' },
+              ].map((r, i) => (
+                <div key={i} style={{ background: card, border: `1px solid ${getLevelBadge(r.min).border}`, borderRadius: '12px', padding: '20px', textAlign: 'center' as const }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                    <BadgeSVG level={r.min} size={80} />
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: r.color, letterSpacing: '2px', marginBottom: '4px' }}>{r.label}</div>
+                  <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>{r.desc}</div>
+                  <div style={{ fontSize: '10px', color: r.color, background: getLevelBadge(r.min).bg, border: `1px solid ${getLevelBadge(r.min).border}`, padding: '4px 10px', borderRadius: '20px', display: 'inline-block' }}>
+                    LVL {r.min} &mdash; {r.max}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ADMIN */}
+        {activeTab === 'admin' && isAdmin && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: '#ef4444' }}>Panneau Admin</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              {['tous les matchs', 'matchs', 'joueurs', 'rangs'].map(t => (
+                <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {adminTab === 'rangs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Aper&ccedil;u des rangs</div>
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                  {[
+                    { range: 'LVL 1-19', label: 'BRONZE', color: '#cd7f32', desc: 'Débutant' },
+                    { range: 'LVL 20-49', label: 'ARGENT', color: '#94a3b8', desc: 'Confirmé' },
+                    { range: 'LVL 50-99', label: 'OR', color: '#ffd700', desc: 'Expérimenté' },
+                    { range: 'LVL 100-199', label: 'PLATINE', color: '#7dd3fc', desc: 'Élite' },
+                    { range: 'LVL 200-299', label: 'DIAMANT', color: '#3b82f6', desc: 'Maître' },
+                    { range: 'LVL 300-399', label: 'MAITRE', color: '#00ff88', desc: 'Champion' },
+                    { range: 'LVL 400-500', label: 'LEGENDAIRE', color: '#a855f7', desc: 'Légende' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: getLevelBadge(i === 0 ? 1 : i === 1 ? 20 : i === 2 ? 50 : i === 3 ? 100 : i === 4 ? 200 : i === 5 ? 300 : 400).bg, border: `1px solid ${getLevelBadge(i === 0 ? 1 : i === 1 ? 20 : i === 2 ? 50 : i === 3 ? 100 : i === 4 ? 200 : i === 5 ? 300 : 400).border}`, borderRadius: '8px' }}>
+                      <BadgeSVG level={i === 0 ? 1 : i === 1 ? 20 : i === 2 ? 50 : i === 3 ? 100 : i === 4 ? 200 : i === 5 ? 300 : 400} size={36} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: r.color }}>{r.label}</div>
+                        <div style={{ fontSize: '11px', color: muted, marginTop: '2px' }}>{r.range} &middot; {r.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'tous les matchs' && (
+              <div style={panel}>
+                <div style={{ ...panelTitle, color: '#ef4444' }}>Tous les matchs ({matches.length})</div>
+                {matches.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: muted }}>Aucun match</div>
+                ) : matches.map((m, i) => (
+                  <div key={i} style={{ padding: '14px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: m.status === 'live' ? 'rgba(239,68,68,0.15)' : m.status === 'completed' ? 'rgba(0,255,136,0.1)' : 'rgba(100,116,139,0.1)', color: m.status === 'live' ? '#ef4444' : m.status === 'completed' ? gold : muted }}>{m.status?.toUpperCase()}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name || 'TBD'}</span>
+                      <span style={{ color: muted }}>vs</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name || 'TBD'}</span>
+                      <span style={{ color: muted, fontSize: '13px' }}>{m.score_a} — {m.score_b}</span>
+                    </div>
+                    <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {adminTab === 'matchs' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Cr&eacute;er un match</div>
+                  <AdminMatchForm onCreate={createMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                </div>
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Matchs en cours</div>
+                  {liveMatches.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '13px' }}>Aucun match en cours</div>
+                  ) : liveMatches.map((m, i) => (
+                    <div key={i} style={{ padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name}</span>
+                        <span style={{ color: muted }}>vs</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name}</span>
+                      </div>
+                      <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'joueurs' && (
+              <>
+                {showBanMenu && selectedPlayer && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#0f0f0f', border: '1px solid #ef4444', borderRadius: '16px', padding: '28px', width: '360px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#ef4444' }}>Bannir {selectedPlayer.username}</div>
+                        <button onClick={() => { setShowBanMenu(false); setSelectedPlayer(null); }} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                        {[{label:'1 heure',value:'1h'},{label:'24 heures',value:'24h'},{label:'48 heures',value:'48h'},{label:'7 jours',value:'7j'},{label:'Permanent',value:'permanent'}].map(opt => (
+                          <button key={opt.value} onClick={() => banPlayer(selectedPlayer.id, opt.value)} style={{ background: opt.value === 'permanent' ? 'rgba(239,68,68,0.15)' : '#111', border: `1px solid ${opt.value === 'permanent' ? '#ef4444' : border}`, color: opt.value === 'permanent' ? '#ef4444' : light, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const }}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {selectedPlayer && !showBanMenu && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#0f0f0f', border: `1px solid ${border}`, borderRadius: '16px', padding: '28px', width: '360px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                            {selectedPlayer.avatar_url ? <img src={selectedPlayer.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : selectedPlayer.username?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '15px', fontWeight: 800, color: light }}>{selectedPlayer.username}</div>
+                            {selectedPlayer.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{selectedPlayer.discord_username}</div>}
+                          </div>
+                        </div>
+                        <button onClick={() => setSelectedPlayer(null)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                        <button onClick={() => toggleAdmin(selectedPlayer.id, selectedPlayer.is_admin)} style={{ background: selectedPlayer.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${selectedPlayer.is_admin ? 'rgba(239,68,68,0.3)' : greenBorder}`, color: selectedPlayer.is_admin ? '#ef4444' : gold, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                          {selectedPlayer.is_admin ? 'Retirer les droits admin' : 'Nommer admin'}
+                        </button>
+                        <button onClick={async () => { await supabase.from('profiles').update({ is_referee: !selectedPlayer.is_referee }).eq('id', selectedPlayer.id); await fetchAllUsers(); setSelectedPlayer((p: any) => ({...p, is_referee: !p.is_referee})); }} style={{ background: selectedPlayer.is_referee ? 'rgba(245,158,11,0.1)' : '#111', border: `1px solid ${selectedPlayer.is_referee ? 'rgba(245,158,11,0.4)' : border}`, color: selectedPlayer.is_referee ? '#f59e0b' : muted, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                          {selectedPlayer.is_referee ? 'Retirer arbitre' : '⚖️ Nommer arbitre'}
+                        </button>
+                        {selectedPlayer.is_banned ? (
+                          <button onClick={() => { unbanPlayer(selectedPlayer.id); setSelectedPlayer(null); }} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                            Lever le ban
+                          </button>
+                        ) : (
+                          <button onClick={() => setShowBanMenu(true)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                            Bannir ce joueur
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div style={panel}>
+                  <div style={{ ...panelTitle, color: '#ef4444' }}>Gestion des joueurs ({allUsers.length})</div>
+                  {allUsers.map((u, i) => {
+                    const banStatus = getBanStatus(u);
+                    return (
+                      <div key={i} onClick={() => { if (u.id !== user?.id) { setSelectedPlayer(u); setShowBanMenu(false); } }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111`, cursor: u.id !== user?.id ? 'pointer' : 'default' }}
+                        onMouseEnter={e => { if (u.id !== user?.id) e.currentTarget.style.background = '#161616'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden', flexShrink: 0 }}>
+                          {u.avatar_url ? <img src={u.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: banStatus ? '#ef4444' : light }}>{u.username}</div>
+                          {u.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{u.discord_username}</div>}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
+                          {u.is_referee && !u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ARBITRE</span>}
+                          {banStatus && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>BANNI {banStatus}</span>}
+                          {u.id !== user?.id && <span style={{ fontSize: '11px', color: muted }}>›</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* TOURNOIS */}
+        {activeTab === 'tournois' && (
+          <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>🏆</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: light, marginBottom: '8px' }}>Tournois</div>
+            <div style={{ fontSize: '14px', color: muted }}>Bientôt disponible...</div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
