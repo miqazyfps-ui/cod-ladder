@@ -528,6 +528,7 @@ export default function Home() {
   const [showCreateMatch, setShowCreateMatch] = useState(false);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [matchsTab, setMatchsTab] = useState('tous');
+  const [classementTab, setClassementTab] = useState('global');
   const [matchFilter, setMatchFilter] = useState('tous');
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [myTeams, setMyTeams] = useState<any[]>([]);
@@ -2100,352 +2101,219 @@ export default function Home() {
         {/* CLASSEMENT */}
         {activeTab === 'classement' && (
           <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Classement g&eacute;n&eacute;ral</div>
-            {loading ? (
-              <div style={{ color: muted, padding: '40px', textAlign: 'center' }}>Chargement...</div>
-            ) : leaderboard.length === 0 ? (
-              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', padding: '60px', textAlign: 'center', color: muted }}>
-                Aucun joueur class&eacute; pour l&apos;instant
-              </div>
-            ) : (
-              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '8px', overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 80px 80px', padding: '10px 16px', fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' as const, color: muted, borderBottom: `1px solid ${border}` }}>
-                  <div>#</div><div>Joueur</div><div style={{ textAlign: 'center' }}>V</div><div style={{ textAlign: 'center' }}>D</div><div style={{ textAlign: 'center' }}>Pts</div>
-                </div>
-                {leaderboard.map((p, i) => (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 80px 80px', padding: '12px 16px', borderBottom: `1px solid #111`, alignItems: 'center' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: i === 0 ? gold : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : muted }}>{i + 1}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '30px', height: '30px', borderRadius: '6px', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: gold }}>{p.username?.[0]?.toUpperCase()}</div>
-                      <span style={{ fontSize: '14px', fontWeight: 600 }}>{p.username}</span>
-                    </div>
-                    <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: 700, color: gold }}>{p.total_wins || 0}</div>
-                    <div style={{ textAlign: 'center', fontSize: '13px', color: muted }}>{p.total_losses || 0}</div>
-                    <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 700, color: gold }}>{p.total_points || 0}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* PROFIL */}
-        {activeTab === 'profil' && user && (
-          <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: muted, marginBottom: '14px' }}>Mon profil</div>
-            
-            {/* BANNIERE */}
-            <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
-              <div style={{ height: '140px', background: profile?.banner_url ? `url(${profile.banner_url}) center/cover` : `linear-gradient(135deg, #1a1400, #2d2000, #1a1400)`, position: 'relative', display: 'flex', alignItems: 'flex-end', padding: '16px' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `3px solid ${gold}`, overflow: 'hidden', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 900, color: gold, position: 'absolute', bottom: '-40px', left: '24px' }}>
-                  {profile?.avatar_url ? <img src={profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (profile?.username || user.email)?.[0]?.toUpperCase()}
-                </div>
-              </div>
-              <div style={{ padding: '50px 24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: light }}>{profile?.username || 'Joueur'}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <BadgeSVG level={getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)} size={44} />
-                      <div>
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color }}>
-                          LVL {getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)}
-                        </div>
-                        <div style={{ fontSize: '10px', color: getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).color, opacity: 0.8 }}>
-                          {getLevelBadge(getLevel(leaderboard.find(p => p.id === user.id)?.total_points || 0)).label}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '12px', color: muted }}>{user.email}</div>
-                  {profile?.discord_username && (
-                    <div style={{ fontSize: '12px', color: '#5865f2', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>Discord:</span><span style={{ fontWeight: 700 }}>{profile.discord_username}</span>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
-                  <div style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: gold }}>{leaderboard.find(p => p.id === user.id)?.total_points || 0}</div>
-                    <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Points</div>
-                  </div>
-                  <div style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: gold }}>{leaderboard.find(p => p.id === user.id)?.total_wins || 0}</div>
-                    <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Victoires</div>
-                  </div>
-                  <div style={{ background: '#111', border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: muted }}>{leaderboard.find(p => p.id === user.id)?.total_losses || 0}</div>
-                    <div style={{ fontSize: '10px', color: muted, textTransform: 'uppercase' as const, letterSpacing: '1px' }}>D&eacute;faites</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px' }}>
-              
-              {/* PARAMETRES */}
-              <div style={panel}>
-                <div style={panelTitle}>Param&egrave;tres</div>
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Nom d&apos;utilisateur</div>
-                    <ProfileInput value={profile?.username || ''} userId={user.id} field="username" label="Sauvegarder" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Banni&egrave;re</div>
-                    <ImageUpload userId={user.id} bucket="banners" field="banner_url" label="Changer la banniere" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
-                    <div style={{ fontSize: '10px', color: muted, marginTop: '4px' }}>Recommand&eacute; : 1200 x 300 px &middot; JPG, PNG &middot; Max 5MB</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: muted, marginBottom: '6px' }}>Avatar</div>
-                    <ImageUpload userId={user.id} bucket="avatars" field="avatar_url" label="Changer l avatar" onSave={fetchProfile} gold={gold} dark={dark} border={border} muted={muted} />
-                    <div style={{ fontSize: '10px', color: muted, marginTop: '4px' }}>Recommand&eacute; : 200 x 200 px &middot; JPG, PNG &middot; Max 2MB</div>
-                  </div>
-                  <div style={{ borderTop: `1px solid ${border}`, paddingTop: '12px' }}>
-                    <div style={{ fontSize: '11px', color: muted, marginBottom: '8px' }}>Discord</div>
-                    {profile?.discord_username ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(88,101,242,0.1)', border: '1px solid rgba(88,101,242,0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                        <div style={{ fontSize: '13px', color: '#5865f2', fontWeight: 700 }}>{profile.discord_username}</div>
-                        <div style={{ fontSize: '10px', color: '#5865f2', background: 'rgba(88,101,242,0.2)', padding: '2px 8px', borderRadius: '4px' }}>Li&eacute;</div>
-                      </div>
-                    ) : (
-                      <button onClick={() => supabase.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } })} style={{ width: '100%', background: '#5865f2', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', letterSpacing: '1px' }}>
-                        Lier mon Discord
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* HISTORIQUE */}
-              <div style={panel}>
-                <div style={panelTitle}>Historique des matchs</div>
-                {completedMatches.length === 0 ? (
-                  <div style={{ padding: '40px', textAlign: 'center', color: muted, fontSize: '13px' }}>
-                    Aucun match jou&eacute; pour l&apos;instant
-                  </div>
-                ) : completedMatches.slice(0, 10).map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
-                    <div style={{ fontSize: '11px', color: muted, minWidth: '80px' }}>
-                      {m.ended_at ? new Date(m.ended_at).toLocaleDateString('fr-FR') : '-'}
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_a_id ? gold : light }}>{m.team_a?.name || 'TBD'}</span>
-                      <span style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_a_id ? gold : light }}>{m.score_a}</span>
-                      <span style={{ color: '#444' }}>—</span>
-                      <span style={{ fontSize: '14px', fontWeight: 900, color: m.winner_id === m.team_b_id ? gold : light }}>{m.score_b}</span>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: m.winner_id === m.team_b_id ? gold : light }}>{m.team_b?.name || 'TBD'}</span>
-                    </div>
-                    <div style={{ fontSize: '10px', background: goldBg, color: gold, padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>Termin&eacute;</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-
-        {/* ADMIN */}
-        {activeTab === 'admin' && isAdmin && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: '#ef4444' }}>Panneau Admin</div>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {['tous les matchs', 'matchs', 'joueurs', 'rangs'].map(t => (
-                <button key={t} onClick={() => setAdminTab(t)} style={{ background: adminTab === t ? 'rgba(239,68,68,0.1)' : card, border: `1px solid ${adminTab === t ? '#ef4444' : border}`, color: adminTab === t ? '#ef4444' : muted, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>
-                  {t}
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' as const }}>
+              {[
+                { id: 'global', label: '🌍 Global' },
+                { id: 'bo7', label: '🎮 Black Ops 7' },
+                { id: 'fc26', label: '⚽ FC 26' },
+                { id: 'modes', label: '📊 Par mode' },
+              ].map(t => (
+                <button key={t.id} onClick={() => setClassementTab(t.id)}
+                  style={{ background: classementTab === t.id ? goldBg : card, border: `1px solid ${classementTab === t.id ? gold : border}`, color: classementTab === t.id ? gold : muted, padding: '8px 18px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                  {t.label}
                 </button>
               ))}
             </div>
 
-            {adminTab === 'matchs' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                
-                <div style={panel}>
-                  <div style={{ ...panelTitle, color: '#ef4444' }}>Cr&eacute;er un match</div>
-                  <AdminMatchForm onCreate={createMatch} gold={gold} dark={dark} border={border} muted={muted} />
+            {/* GLOBAL */}
+            {classementTab === 'global' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px' }}>
+                <div>
+                  {/* Top 3 podium */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                    {leaderboard.slice(0, 3).map((p, i) => (
+                      <div key={i} style={{ background: card, border: `1px solid ${i === 0 ? gold : border}`, borderRadius: '12px', padding: '20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                        {i === 0 && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: gold }} />}
+                        <div style={{ fontSize: '28px', marginBottom: '8px' }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                        <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: goldBg, border: `2px solid ${i === 0 ? gold : border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 700, color: gold, margin: '0 auto 10px', overflow: 'hidden' }}>
+                          {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: light, marginBottom: '6px' }}>{p.username}</div>
+                        <div style={{ fontSize: '22px', fontWeight: 900, color: gold }}>{p.total_points || 0}</div>
+                        <div style={{ fontSize: '10px', color: muted }}>points</div>
+                        <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
+                          <BadgeSVG level={getLevel(p.total_points || 0)} size={32} />
+                        </div>
+                      </div>
+                    ))}
+                    {leaderboard.length === 0 && (
+                      <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: muted, background: card, borderRadius: '12px', border: `1px solid ${border}` }}>
+                        Aucun joueur classé
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Liste complète */}
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                    {leaderboard.slice(3).map((p, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: muted, width: '24px', textAlign: 'center' as const }}>{i + 4}</div>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                          {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{p.username}</div>
+                          <div style={{ fontSize: '11px', color: muted }}>{p.total_wins || 0}V · {p.total_losses || 0}D</div>
+                        </div>
+                        <BadgeSVG level={getLevel(p.total_points || 0)} size={28} />
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: gold }}>{p.total_points || 0} pts</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div style={panel}>
-                  <div style={{ ...panelTitle, color: '#ef4444' }}>Matchs en cours</div>
-                  {liveMatches.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '13px' }}>Aucun match en cours</div>
-                  ) : liveMatches.map((m, i) => (
-                    <div key={i} style={{ padding: '12px 16px', borderBottom: `1px solid #111` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name}</span>
-                        <span style={{ color: muted }}>vs</span>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name}</span>
+                {/* Sidebar stats */}
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', color: muted, textTransform: 'uppercase' as const, marginBottom: '12px' }}>Stats globales</div>
+                    {[
+                      { label: 'Joueurs classés', value: leaderboard.length },
+                      { label: 'Matchs joués', value: matches.length },
+                      { label: 'En direct', value: liveMatches.length },
+                      { label: 'Matchs planifiés', value: matchRequests.filter(r => r.status !== 'cancelled').length },
+                    ].map((s, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 3 ? `1px solid #111` : 'none' }}>
+                        <span style={{ fontSize: '12px', color: muted }}>{s.label}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{s.value}</span>
                       </div>
-                      <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div style={{ ...panel, gridColumn: '1 / -1' }}>
-                  <div style={{ ...panelTitle, color: '#ef4444' }}>Historique complet</div>
-                  {completedMatches.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '13px' }}>Aucun match termin&eacute;</div>
-                  ) : completedMatches.map((m, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 16px', borderBottom: `1px solid #111` }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
-                        <span style={{ fontWeight: 700, color: m.winner_id === m.team_a_id ? gold : light }}>{m.team_a?.name}</span>
-                        <span style={{ color: gold, fontWeight: 900 }}>{m.score_a}</span>
-                        <span style={{ color: muted }}>—</span>
-                        <span style={{ color: m.winner_id === m.team_b_id ? gold : '#888', fontWeight: 900 }}>{m.score_b}</span>
-                        <span style={{ fontWeight: 700, color: m.winner_id === m.team_b_id ? gold : light }}>{m.team_b?.name}</span>
+                  {user && leaderboard.find(p => p.id === user.id) && (() => {
+                    const myStats = leaderboard.find(p => p.id === user.id);
+                    const myRank = leaderboard.findIndex(p => p.id === user.id) + 1;
+                    const myLevel = getLevel(myStats?.total_points || 0);
+                    const myBadge = getLevelBadge(myLevel);
+                    const nextLevel = Math.min(500, myLevel + 1);
+                    const progress = ((myStats?.total_points || 0) % 10) * 10;
+                    return (
+                      <div style={{ background: card, border: `1px solid ${gold}`, borderRadius: '12px', padding: '16px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', color: gold, textTransform: 'uppercase' as const, marginBottom: '12px' }}>Mon classement</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                          <BadgeSVG level={myLevel} size={44} />
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, color: light }}>{myStats?.username}</div>
+                            <div style={{ fontSize: '12px', color: myBadge.color, fontWeight: 700 }}>LVL {myLevel} · {myBadge.label}</div>
+                          </div>
+                          <div style={{ marginLeft: 'auto', fontSize: '20px', fontWeight: 900, color: gold }}>#{myRank}</div>
+                        </div>
+                        <div style={{ marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '11px', color: muted }}>Progression vers LVL {nextLevel}</span>
+                            <span style={{ fontSize: '11px', color: gold }}>{progress}%</span>
+                          </div>
+                          <div style={{ height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: progress + '%', background: gold, borderRadius: '3px', transition: 'width 0.5s' }} />
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                          {[
+                            { label: 'Points', value: myStats?.total_points || 0 },
+                            { label: 'Victoires', value: myStats?.total_wins || 0 },
+                            { label: 'Défaites', value: myStats?.total_losses || 0 },
+                          ].map((s, i) => (
+                            <div key={i} style={{ background: goldBg, border: `1px solid ${greenBorder}`, borderRadius: '6px', padding: '8px', textAlign: 'center' as const }}>
+                              <div style={{ fontSize: '18px', fontWeight: 900, color: gold }}>{s.value}</div>
+                              <div style={{ fontSize: '9px', color: muted, textTransform: 'uppercase' as const }}>{s.label}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <button onClick={() => deleteMatch(m.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                        Supprimer
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })()}
                 </div>
               </div>
             )}
 
-            {adminTab === 'rangs' && (
-              <div style={panel}>
-                <div style={{ ...panelTitle, color: '#ef4444' }}>Aper&ccedil;u des rangs</div>
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
-                  {[
-                    { range: 'LVL 1-19', label: 'BRONZE', icon: '🛡️', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)', border: 'rgba(205,127,50,0.4)', desc: 'Débutant' },
-                    { range: 'LVL 20-49', label: 'ARGENT', icon: '🔰', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', desc: 'Confirmé' },
-                    { range: 'LVL 50-99', label: 'OR', icon: '⭐', color: '#00ff88', bg: 'rgba(0,255,136,0.15)', border: 'rgba(0,255,136,0.4)', desc: 'Expérimenté' },
-                    { range: 'LVL 100-199', label: 'PLATINE', icon: '⚡', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.4)', desc: '&Eacute;lite' },
-                    { range: 'LVL 200-299', label: 'DIAMANT', icon: '💎', color: '#00ccff', bg: 'rgba(0,204,255,0.15)', border: 'rgba(0,204,255,0.4)', desc: 'Maître' },
-                    { range: 'LVL 300-399', label: 'MAITRE', icon: '🔥', color: '#ff8800', bg: 'rgba(255,136,0,0.15)', border: 'rgba(255,136,0,0.4)', desc: 'Champion' },
-                    { range: 'LVL 400-500', label: 'LEGENDAIRE', icon: '👑', color: '#ff4444', bg: 'rgba(255,68,68,0.15)', border: 'rgba(255,68,68,0.4)', desc: 'Légende' },
-                  ].map((r, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: r.bg, border: `1px solid ${r.border}`, borderRadius: '8px' }}>
-                      <div style={{ fontSize: '28px' }}>{r.icon}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: r.color, textShadow: `0 0 10px ${r.color}66` }}>{r.label}</div>
-                        <div style={{ fontSize: '11px', color: muted, marginTop: '2px' }}>{r.range} &middot; {r.desc}</div>
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '4px', background: r.bg, color: r.color, border: `1px solid ${r.border}` }}>
-                        {r.icon} {r.label}
-                      </div>
+            {/* BO7 */}
+            {classementTab === 'bo7' && (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', height: '100px', overflow: 'hidden' }}>
+                  <img src="/images/bo7.jpg" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.4))' }} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 20px' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: gold, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const }}>Call of Duty</div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>Black Ops 7</div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {adminTab === 'tous les matchs' && (
-              <div style={panel}>
-                <div style={{ ...panelTitle, color: '#ef4444' }}>Tous les matchs ({matches.length})</div>
-                {matches.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: muted }}>Aucun match</div>
-                ) : matches.map((m, i) => (
-                  <div key={i} style={{ padding: '14px 16px', borderBottom: `1px solid #111` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: m.status === 'live' ? 'rgba(239,68,68,0.15)' : m.status === 'completed' ? 'rgba(0,255,136,0.1)' : 'rgba(100,116,139,0.1)', color: m.status === 'live' ? '#ef4444' : m.status === 'completed' ? gold : muted }}>{m.status?.toUpperCase()}</span>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_a?.name || 'TBD'}</span>
-                      <span style={{ color: muted }}>vs</span>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: gold }}>{m.team_b?.name || 'TBD'}</span>
-                      <span style={{ color: muted, fontSize: '13px' }}>{m.score_a} — {m.score_b}</span>
+                {leaderboard.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: muted }}>Aucun joueur classé sur BO7</div>
+                ) : leaderboard.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: i < 3 ? gold : muted, width: '24px', textAlign: 'center' as const }}>{i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</div>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                      {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
                     </div>
-                    <AdminScoreForm match={m} onUpdate={updateScore} onDelete={deleteMatch} gold={gold} dark={dark} border={border} muted={muted} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{p.username}</div>
+                      <div style={{ fontSize: '11px', color: muted }}>{p.total_wins || 0}V · {p.total_losses || 0}D · Ratio {p.total_losses ? ((p.total_wins || 0) / p.total_losses).toFixed(2) : '∞'}</div>
+                    </div>
+                    <BadgeSVG level={getLevel(p.total_points || 0)} size={28} />
+                    <div style={{ fontSize: '14px', fontWeight: 900, color: gold }}>{p.total_points || 0} pts</div>
                   </div>
                 ))}
               </div>
             )}
 
-            {adminTab === 'joueurs' && (
-              <>
-                {/* Modal ban */}
-                {showBanMenu && selectedPlayer && (
-                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ background: '#0f0f0f', border: '1px solid #ef4444', borderRadius: '16px', padding: '28px', width: '360px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#ef4444' }}>Bannir {selectedPlayer.username}</div>
-                        <button onClick={() => { setShowBanMenu(false); setSelectedPlayer(null); }} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
-                        {[
-                          { label: '1 heure', value: '1h' },
-                          { label: '24 heures', value: '24h' },
-                          { label: '48 heures', value: '48h' },
-                          { label: '7 jours', value: '7j' },
-                          { label: 'Permanent', value: 'permanent' },
-                        ].map(opt => (
-                          <button key={opt.value} onClick={() => banPlayer(selectedPlayer.id, opt.value)} style={{ background: opt.value === 'permanent' ? 'rgba(239,68,68,0.15)' : '#111', border: `1px solid ${opt.value === 'permanent' ? '#ef4444' : border}`, color: opt.value === 'permanent' ? '#ef4444' : light, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textAlign: 'left' as const }}>
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
+            {/* FC26 */}
+            {classementTab === 'fc26' && (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', height: '100px', overflow: 'hidden' }}>
+                  <img src="/images/fc26.jpg" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.4))' }} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 20px' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: gold, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const }}>EA Sports</div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff' }}>FC 26</div>
                     </div>
                   </div>
-                )}
-
-                {/* Modal actions joueur */}
-                {selectedPlayer && !showBanMenu && (
-                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ background: '#0f0f0f', border: `1px solid ${border}`, borderRadius: '16px', padding: '28px', width: '360px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
-                            {selectedPlayer.avatar_url ? <img src={selectedPlayer.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : selectedPlayer.username?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '15px', fontWeight: 800, color: light }}>{selectedPlayer.username}</div>
-                            {selectedPlayer.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{selectedPlayer.discord_username}</div>}
-                          </div>
-                        </div>
-                        <button onClick={() => setSelectedPlayer(null)} style={{ background: 'none', border: 'none', color: muted, fontSize: '20px', cursor: 'pointer' }}>x</button>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
-                        <button onClick={() => toggleAdmin(selectedPlayer.id, selectedPlayer.is_admin)} style={{ background: selectedPlayer.is_admin ? 'rgba(239,68,68,0.1)' : goldBg, border: `1px solid ${selectedPlayer.is_admin ? 'rgba(239,68,68,0.3)' : greenBorder}`, color: selectedPlayer.is_admin ? '#ef4444' : gold, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                          {selectedPlayer.is_admin ? 'Retirer les droits admin' : 'Nommer admin'}
-                        </button>
-                        {selectedPlayer.is_banned ? (
-                          <button onClick={() => { unbanPlayer(selectedPlayer.id); setSelectedPlayer(null); }} style={{ background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)', color: '#00e5a0', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                            Lever le ban
-                          </button>
-                        ) : (
-                          <button onClick={() => setShowBanMenu(true)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                            Bannir ce joueur
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={panel}>
-                  <div style={{ ...panelTitle, color: '#ef4444' }}>Gestion des joueurs ({allUsers.length})</div>
-                  {allUsers.map((u, i) => {
-                    const banStatus = getBanStatus(u);
-                    return (
-                      <div key={i} onClick={() => { if (u.id !== user.id) { setSelectedPlayer(u); setShowBanMenu(false); } }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111`, cursor: u.id !== user.id ? 'pointer' : 'default', transition: 'background 0.15s' }}
-                        onMouseEnter={e => { if (u.id !== user.id) e.currentTarget.style.background = '#161616'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden', flexShrink: 0 }}>
-                          {u.avatar_url ? <img src={u.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: banStatus ? '#ef4444' : light }}>{u.username}</div>
-                          {u.discord_username && <div style={{ fontSize: '11px', color: '#5865f2' }}>@{u.discord_username}</div>}
-                        </div>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          {u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ADMIN</span>}
-                          {u.is_referee && !u.is_admin && <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>ARBITRE</span>}
-                          {banStatus && <span style={{ fontSize: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>BANNI {banStatus}</span>}
-                          {u.id !== user.id && <span style={{ fontSize: '11px', color: muted }}>›</span>}
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
-              </>
+                {leaderboard.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: muted }}>Aucun joueur classé sur FC 26</div>
+                ) : leaderboard.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: `1px solid #111` }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: i < 3 ? gold : muted, width: '24px', textAlign: 'center' as const }}>{i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</div>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                      {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: light }}>{p.username}</div>
+                      <div style={{ fontSize: '11px', color: muted }}>{p.total_wins || 0}V · {p.total_losses || 0}D · Ratio {p.total_losses ? ((p.total_wins || 0) / p.total_losses).toFixed(2) : '∞'}</div>
+                    </div>
+                    <BadgeSVG level={getLevel(p.total_points || 0)} size={28} />
+                    <div style={{ fontSize: '14px', fontWeight: 900, color: gold }}>{p.total_points || 0} pts</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* PAR MODE */}
+            {classementTab === 'modes' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                {['1v1', '2v2', '3v3', '4v4', '5v5', '6v6'].map(mode => (
+                  <div key={mode} style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '12px 16px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 900, color: gold }}>{mode}</div>
+                      <div style={{ fontSize: '10px', color: muted }}>Top joueurs</div>
+                    </div>
+                    {leaderboard.length === 0 ? (
+                      <div style={{ padding: '20px', textAlign: 'center', color: muted, fontSize: '12px' }}>Aucune donnée</div>
+                    ) : leaderboard.slice(0, 5).map((p, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderBottom: `1px solid #0a0a0a` }}>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: i < 3 ? gold : muted, width: '16px' }}>{i + 1}</div>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                          {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, fontSize: '12px', fontWeight: 600, color: light }}>{p.username}</div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: gold }}>{p.total_points || 0}</div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             )}
           </>
         )}
-
-      </div>
-    </div>
-  );
-}
