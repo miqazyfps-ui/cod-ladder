@@ -592,7 +592,7 @@ export default function Home() {
     }).select().single();
     if (error) { alert('Erreur: ' + error.message); return; }
     if (team) {
-      await supabase.from('team_members').insert({ team_id: team.id, profile_id: user.id });
+      await supabase.from('team_members').insert({ team_id: team.id, player_id: user.id });
       fetchData();
       setShowCreateTeam(false);
     }
@@ -615,14 +615,14 @@ export default function Home() {
     if (!user) return;
     await supabase.from('team_invites').update({ status: accept ? 'accepted' : 'declined' }).eq('id', inviteId);
     if (accept) {
-      await supabase.from('team_members').insert({ team_id: teamId, profile_id: user.id });
+      await supabase.from('team_members').insert({ team_id: teamId, player_id: user.id });
     }
     fetchData();
   }
 
   async function leaveTeam(teamId: string) {
     if (!user) return;
-    await supabase.from('team_members').delete().eq('team_id', teamId).eq('profile_id', user.id);
+    await supabase.from('team_members').delete().eq('team_id', teamId).eq('player_id', user.id);
     fetchData();
   }
 
@@ -821,8 +821,8 @@ export default function Home() {
     setLeaderboard(lb || []);
     setMatchRequests(mr || []);
     if (user) {
-      const { data: teams } = await supabase.from('teams').select('*, members:team_members(*, profile:profile_id(username, avatar_url))').eq('captain_id', user.id);
-      const { data: memberTeams } = await supabase.from('team_members').select('*, team:team_id(*, members:team_members(*, profile:profile_id(username, avatar_url)))').eq('profile_id', user.id);
+      const { data: teams } = await supabase.from('teams').select('*, members:team_members(*, profile:player_id(username, avatar_url))').eq('captain_id', user.id);
+      const { data: memberTeams } = await supabase.from('team_members').select('*, team:team_id(*, members:team_members(*, profile:player_id(username, avatar_url)))').eq('player_id', user.id);
       const allMyTeams = [...(teams || []), ...((memberTeams || []).map((m: any) => m.team).filter((t: any) => t && t.captain_id !== user.id))];
       setMyTeams(allMyTeams);
       const { data: invites } = await supabase.from('team_invites').select('*, team:team_id(name), inviter:inviter_id(username)').eq('invitee_id', user.id).eq('status', 'pending');
@@ -1614,7 +1614,7 @@ export default function Home() {
                                   {m.profile?.avatar_url ? <img src={m.profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.profile?.username?.[0]?.toUpperCase()}
                                 </div>
                                 <div style={{ fontSize: '11px', color: light }}>{m.profile?.username}</div>
-                                {team.captain_id === m.profile_id && <div style={{ fontSize: '9px', color: gold }}>★</div>}
+                                {team.captain_id === m.player_id && <div style={{ fontSize: '9px', color: gold }}>★</div>}
                               </div>
                             ))}
                           </div>
