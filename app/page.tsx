@@ -472,6 +472,8 @@ export default function Home() {
   const [heroSlide, setHeroSlide] = useState(0);
   const [showCreateMatch, setShowCreateMatch] = useState(false);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [matchsTab, setMatchsTab] = useState('tous');
+  const [matchFilter, setMatchFilter] = useState('tous');
   const [myTeams, setMyTeams] = useState<any[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [teamInvites, setTeamInvites] = useState<any[]>([]);
@@ -1014,7 +1016,7 @@ export default function Home() {
       <nav style={{ background: '#0f0f0f', borderBottom: `2px solid ${gold}`, padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Image src="/images/Logo_Png_CL.png" alt="Clutch2Win" width={90} height={60} style={{ objectFit: 'contain', cursor: 'pointer' }} onClick={() => setActiveTab('jeux')} />
         <div style={{ display: 'flex', gap: '4px' }}>
-          {['accueil', 'jeux', 'equipes', 'tournois', 'classement', 'rangs'].map(tab => (
+          {['accueil', 'matchs', 'jeux', 'equipes', 'tournois', 'classement', 'rangs'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={navBtn(activeTab === tab)}>{tab}</button>
           ))}
           {user && <button onClick={() => setActiveTab('profil')} style={navBtn(activeTab === 'profil')}>Profil</button>}
@@ -1539,6 +1541,166 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </>
+        )}
+
+        {/* MATCHS */}
+        {activeTab === 'matchs' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['tous', 'mes matchs'].map(t => (
+                  <button key={t} onClick={() => setMatchsTab(t)}
+                    style={{ background: matchsTab === t ? goldBg : card, border: `1px solid ${matchsTab === t ? gold : border}`, color: matchsTab === t ? gold : muted, padding: '8px 18px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize' as const }}>
+                    {t === 'tous' ? 'Tous les matchs' : 'Mes matchs'}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['tous', 'bo7', 'fc26'].map(f => (
+                  <button key={f} onClick={() => setMatchFilter(f)}
+                    style={{ background: matchFilter === f ? goldBg : 'transparent', border: `1px solid ${matchFilter === f ? gold : border}`, color: matchFilter === f ? gold : muted, padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                    {f === 'tous' ? 'Tous' : f === 'bo7' ? 'Black Ops 7' : 'FC 26'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(() => {
+              const filtered = matchRequests.filter(r => {
+                if (r.status === 'cancelled') return false;
+                if (matchFilter !== 'tous' && r.game !== matchFilter) return false;
+                if (matchsTab === 'mes matchs' && user) {
+                  return r.requester_id === user.id || r.opponent_id === user.id;
+                }
+                return true;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '12px', padding: '60px', textAlign: 'center' as const }}>
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎮</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: light, marginBottom: '8px' }}>
+                      {matchsTab === 'mes matchs' ? 'Aucun match pour toi' : 'Aucun match en cours'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: muted, marginBottom: '16px' }}>
+                      {matchsTab === 'mes matchs' ? 'Lance un match depuis un mode de jeu' : 'Sois le premier à lancer un match !'}
+                    </div>
+                    <button onClick={() => setActiveTab('jeux')} style={{ background: gold, color: dark, border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>
+                      Aller sur les jeux
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                  {filtered.map((r, i) => {
+                    const revealed = isRevealed(r.planned_at);
+                    const cancelable = canCancel(r.planned_at);
+                    const isMyMatch = user && (r.requester_id === user.id || r.opponent_id === user.id);
+                    const isRequester = user && r.requester_id === user.id;
+                    const revealTime = timeUntilReveal(r.planned_at);
+                    const gameLabel = r.game === 'bo7' ? 'Black Ops 7' : 'FC 26';
+                    const isPast = new Date(r.planned_at).getTime() < now.getTime();
+
+                    return (
+                      <div key={i} style={{ background: card, border: `1px solid ${isMyMatch ? gold : border}`, borderRadius: '10px', padding: '16px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px',
+                              background: r.status === 'accepted' ? 'rgba(0,255,136,0.1)' : isPast ? 'rgba(239,68,68,0.1)' : 'rgba(255,215,0,0.1)',
+                              color: r.status === 'accepted' ? gold : isPast ? '#ef4444' : '#ffd700',
+                              border: `1px solid ${r.status === 'accepted' ? gold : isPast ? 'rgba(239,68,68,0.3)' : 'rgba(255,215,0,0.3)'}` }}>
+                              {r.result_status === 'validated' ? 'TERMINÉ' : r.status === 'accepted' ? 'ACCEPTÉ' : isPast ? 'EXPIRÉ' : 'EN ATTENTE'}
+                            </div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, background: goldBg, color: gold, padding: '3px 8px', borderRadius: '4px', border: `1px solid ${greenBorder}` }}>
+                              {gameLabel} · {r.mode}
+                            </div>
+                            {isMyMatch && <div style={{ fontSize: '10px', color: gold, fontWeight: 700 }}>⭐ Mon match</div>}
+                          </div>
+                          <div style={{ fontSize: '12px', color: muted }}>
+                            {new Date(r.planned_at).toLocaleDateString('fr-FR')} à {new Date(r.planned_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, border: `2px solid ${gold}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                                {r.requester?.avatar_url ? <img src={r.requester.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : r.requester?.username?.[0]?.toUpperCase()}
+                              </div>
+                              <div style={{ fontSize: '14px', fontWeight: 700, color: light }}>{r.requester?.username}</div>
+                            </div>
+                            <div style={{ fontSize: '16px', fontWeight: 900, color: muted }}>VS</div>
+                            {r.status === 'accepted' && (revealed || isMyMatch) ? (
+                              revealed ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: goldBg, border: `2px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, color: gold, overflow: 'hidden' }}>
+                                    {r.opponent?.avatar_url ? <img src={r.opponent.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : r.opponent?.username?.[0]?.toUpperCase()}
+                                  </div>
+                                  <div style={{ fontSize: '14px', fontWeight: 700, color: light }}>{r.opponent?.username}</div>
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: '13px', color: muted, fontStyle: 'italic' }}>
+                                  {isMyMatch ? `Révélé dans ${revealTime} 🔒` : 'Adversaire caché 🔒'}
+                                </div>
+                              )
+                            ) : r.status === 'open' ? (
+                              <div style={{ fontSize: '13px', color: muted, fontStyle: 'italic' }}>En attente...</div>
+                            ) : null}
+                            {r.result_status === 'validated' && (
+                              <div style={{ fontSize: '14px', fontWeight: 900, color: gold }}>{r.result_score_a} — {r.result_score_b}</div>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {r.status === 'open' && !isRequester && user && (
+                              <button onClick={() => joinMatchRequest(r.id)} style={{ background: gold, color: dark, border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                Rejoindre
+                              </button>
+                            )}
+                            {r.status === 'accepted' && revealed && isMyMatch && (
+                              <button onClick={() => openChat('match:' + r.id)} style={{ background: goldBg, border: `1px solid ${greenBorder}`, color: gold, padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                💬
+                              </button>
+                            )}
+                            {r.status === 'accepted' && revealed && isMyMatch && !r.result_submitted_by && (
+                              <button onClick={() => setShowSubmitResult(r)} style={{ background: goldBg, border: `1px solid ${greenBorder}`, color: gold, padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                📊 Score
+                              </button>
+                            )}
+                            {r.result_submitted_by && r.result_status === 'waiting_validation' && isMyMatch && (
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                {((isRequester && !r.result_validated_requester) || (!isRequester && !r.result_validated_opponent)) && (
+                                  <>
+                                    <button onClick={() => validateResult(r.id, !!isRequester)} style={{ background: 'rgba(0,255,136,0.1)', border: `1px solid ${gold}`, color: gold, padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>✅</button>
+                                    <button onClick={() => contestResult(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🚨</button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                            {r.result_status === 'contested' && (isReferee || isAdmin) && (
+                              <button onClick={() => openChat('arbitrage:' + r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>⚖️</button>
+                            )}
+                            {isRequester && r.status === 'open' && (
+                              <button onClick={() => cancelMatchRequest(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                Annuler
+                              </button>
+                            )}
+                            {isMyMatch && cancelable && r.status === 'accepted' && (
+                              <button onClick={() => cancelMatchRequest(r.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                                Annuler
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </>
         )}
 
