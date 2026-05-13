@@ -24,7 +24,7 @@ const LADDER_GROUPS = [
 
 
 
-const StableAuthForm = memo(function StableAuthForm({ gold, onClose }: { gold: string, onClose: () => void }) {
+function StableAuthForm({ gold, onClose }: { gold: string, onClose: () => void }) {
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
@@ -45,7 +45,7 @@ const StableAuthForm = memo(function StableAuthForm({ gold, onClose }: { gold: s
       />
     </>
   );
-});
+}
 
 function CreateTeamForm({ onSubmit, onCancel, gold, dark, border, muted, light }: any) {
   const [name, setName] = useState('');
